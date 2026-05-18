@@ -39,10 +39,18 @@ pipeline {
                     def allServices = javaServices + nodeServices + multiStageServices
 
                     def servicesToBuild = []
-                    for (file in changedFiles) {
-                        def topDir = file.split('/')[0]
-                        if (allServices.contains(topDir) && !servicesToBuild.contains(topDir)) {
-                            servicesToBuild.add(topDir)
+
+                    // Nếu .build-trigger thay đổi → build toàn bộ services
+                    def triggerAll = changedFiles.any { it.contains('.build-trigger') }
+                    if (triggerAll) {
+                        servicesToBuild = allServices.collect { it }
+                        echo "=> .build-trigger detected, building ALL services..."
+                    } else {
+                        for (file in changedFiles) {
+                            def topDir = file.split('/')[0]
+                            if (allServices.contains(topDir) && !servicesToBuild.contains(topDir)) {
+                                servicesToBuild.add(topDir)
+                            }
                         }
                     }
 
