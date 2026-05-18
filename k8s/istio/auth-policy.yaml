@@ -1,0 +1,19 @@
+# 1. Từ chối tất cả các truy cập vào service 'product' từ bên ngoài
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: deny-product-access
+  namespace: yas-app
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: product
+  action: ALLOW
+  rules:
+  # Chỉ cho phép các service thuộc namespace yas-app có serviceAccount là storefront-bff được gọi
+  - from:
+    - source:
+        principals: ["cluster.local/ns/yas-app/sa/storefront-bff", "cluster.local/ns/yas-app/sa/default"]
+    to:
+    - operation:
+        methods: ["GET", "POST"]

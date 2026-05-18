@@ -1,0 +1,32 @@
+pipeline {
+    agent any
+
+    environment {
+        K8S_NAMESPACE = 'yas-app'
+    }
+
+    stages {
+        stage('Cleanup Deployments') {
+            steps {
+                script {
+                    echo "=> Bắt đầu dọn dẹp các service đã deploy bằng Helm trong namespace ${env.K8S_NAMESPACE}..."
+                    
+                    // Lấy danh sách tất cả các helm release trong namespace
+                    def releases = sh(script: "helm ls -q -n ${env.K8S_NAMESPACE}", returnStdout: true).trim().split('\n')
+                    
+                    if (releases.size() == 0 || (releases.size() == 1 && releases[0] == "")) {
+                        echo "=> Không có service nào đang được deploy."
+                    } else {
+                        for (release in releases) {
+                            if (release) {
+                                echo "Đang xóa: ${release}"
+                                sh "helm uninstall ${release} -n ${env.K8S_NAMESPACE}"
+                            }
+                        }
+                        echo "=> Dọn dẹp hoàn tất!"
+                    }
+                }
+            }
+        }
+    }
+}

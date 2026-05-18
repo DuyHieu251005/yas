@@ -18,14 +18,40 @@
 *.zip
 *.tar.gz
 *.rar
-target
+target/
+*/target/
+
+# Node.js
+node_modules/
+*/node_modules/
+
+# Python & Temporary Debug Scripts
+__pycache__/
+*.pyc
+.venv/
+check_all.py
+check_vm.py
+fixed_install.py
+run_ssh_install.py
+update_dockerfiles.py
+verify_install.py
+install-yas-env.sh
+
+# OS Files
+.DS_Store
+Thumbs.db
 
 ### IntelliJ IDEA ###
 .idea
+*.iml
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
+### Eclipse ###
 .project
 .settings*
-.vscode
-*.iml
+.classpath
+
+### VS Code ###
+.vscode/
+
+# virtual machine crash logs
+hs_err_pid*

@@ -1,0 +1,107 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'cart_branch', defaultValue: 'main', description: 'Branch cho cart')
+        string(name: 'customer_branch', defaultValue: 'main', description: 'Branch cho customer')
+        string(name: 'delivery_branch', defaultValue: 'main', description: 'Branch cho delivery')
+        string(name: 'inventory_branch', defaultValue: 'main', description: 'Branch cho inventory')
+        string(name: 'location_branch', defaultValue: 'main', description: 'Branch cho location')
+        string(name: 'media_branch', defaultValue: 'main', description: 'Branch cho media')
+        string(name: 'order_branch', defaultValue: 'main', description: 'Branch cho order')
+        string(name: 'payment_branch', defaultValue: 'main', description: 'Branch cho payment')
+        string(name: 'payment_paypal_branch', defaultValue: 'main', description: 'Branch cho payment-paypal')
+        string(name: 'product_branch', defaultValue: 'main', description: 'Branch cho product')
+        string(name: 'promotion_branch', defaultValue: 'main', description: 'Branch cho promotion')
+        string(name: 'rating_branch', defaultValue: 'main', description: 'Branch cho rating')
+        string(name: 'recommendation_branch', defaultValue: 'main', description: 'Branch cho recommendation')
+        string(name: 'search_branch', defaultValue: 'main', description: 'Branch cho search')
+        string(name: 'tax_branch', defaultValue: 'main', description: 'Branch cho tax')
+        string(name: 'webhook_branch', defaultValue: 'main', description: 'Branch cho webhook')
+        string(name: 'backoffice_branch', defaultValue: 'main', description: 'Branch cho backoffice')
+        string(name: 'storefront_branch', defaultValue: 'main', description: 'Branch cho storefront')
+        string(name: 'storefront_bff_branch', defaultValue: 'main', description: 'Branch cho storefront-bff')
+        string(name: 'backoffice_bff_branch', defaultValue: 'main', description: 'Branch cho backoffice-bff')
+    }
+
+    environment {
+        DOCKERHUB_USERNAME = 'duyhieu2005'
+        K8S_NAMESPACE = 'yas-app'
+        WORKER_NODE_IP = '192.168.x.x' // IP của k8s worker node
+    }
+
+    stages {
+        stage('Deploy Services to K8s') {
+            steps {
+                script {
+                    // Danh sách map các chart với tham số nhánh từ UI
+                    def services = [
+                        'cart': params.cart_branch,
+                        'customer': params.customer_branch,
+                        'delivery': params.delivery_branch,
+                        'inventory': params.inventory_branch,
+                        'location': params.location_branch,
+                        'media': params.media_branch,
+                        'order': params.order_branch,
+                        'payment': params.payment_branch,
+                        'payment-paypal': params.payment_paypal_branch,
+                        'product': params.product_branch,
+                        'promotion': params.promotion_branch,
+                        'rating': params.rating_branch,
+                        'recommendation': params.recommendation_branch,
+                        'search': params.search_branch,
+                        'tax': params.tax_branch,
+                        'webhook': params.webhook_branch,
+                        'backoffice': params.backoffice_branch,
+                        'storefront': params.storefront_branch,
+                        'storefront-bff': params.storefront_bff_branch,
+                        'backoffice-bff': params.backoffice_bff_branch
+                    ]
+                    
+                    for (entry in services) {
+                        def service = entry.key
+                        def branch = entry.value
+                        
+                        def tagToDeploy = 'latest'
+                        
+                        // Nếu developer truyền vào nhánh dev (khác main)
+                        if (branch && branch != 'main') {
+                            // Lấy mã commit ngắn nhất (7 ký tự) của nhánh dev đó trên repo origin
+                            def commitId = sh(script: "git ls-remote origin ${branch} | head -n 1 | cut -c1-7", returnStdout: true).trim()
+                            if (commitId) {
+                                tagToDeploy = commitId
+                            } else {
+                                echo "CẢNH BÁO: Không tìm thấy commit cho nhánh ${branch}, dùng tag latest."
+                            }
+                        }
+
+                        echo "=> Đang Deploy service: ${service} - Tag sử dụng: ${tagToDeploy}"
+                        
+                        // Sử dụng Helm để update hoặc cài đặt service
+                        // Cấu hình service type là NodePort để dev test local
+                        sh """
+                        helm dependency build k8s/charts/${service}
+                        helm upgrade --install ${service} k8s/charts/${service} \
+                            --namespace ${env.K8S_NAMESPACE} --create-namespace \
+                            --set backend.image.repository=${env.DOCKERHUB_USERNAME}/yas-${service} \
+                            --set backend.image.tag=${tagToDeploy} \
+                            --set service.type=NodePort
+                        """
+                    }
+                }
+            }
+        }
+        
+        stage('Get NodePort Endpoint') {
+            steps {
+                script {
+                    echo "============== ENDPOINTS CHO DEVELOPER TEST =============="
+                    echo "Vui lòng map IP của K8s Worker Node (${env.WORKER_NODE_IP}) với file /etc/hosts theo các URL sau:"
+                    sh """
+                    kubectl get svc -n ${env.K8S_NAMESPACE} | grep NodePort
+                    """
+                }
+            }
+        }
+    }
+}
