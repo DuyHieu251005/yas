@@ -92,4 +92,5 @@
             </plugin>
         </plugins>
     </build>
+<!-- ci-trigger-v2 -->
 </project>
