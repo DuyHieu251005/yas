@@ -22,19 +22,20 @@ pipeline {
                 script {
                     def changedFiles = sh(script: "git diff-tree --no-commit-id --name-only -r HEAD", returnStdout: true).trim().split('\n')
 
-                    // Các service Java đơn giản: Maven build từ root, Docker COPY jar
+                    // Các service Java: Maven build từ root, Docker COPY jar từ target/
                     def javaServices = [
                         'cart', 'customer', 'inventory', 'location',
                         'media', 'order', 'payment', 'payment-paypal', 'product',
                         'promotion', 'rating', 'recommendation', 'search', 'tax',
-                        'webhook', 'backoffice-bff', 'storefront-bff', 'sampledata'
+                        'webhook', 'backoffice-bff', 'storefront-bff', 'sampledata',
+                        'delivery'
                     ]
 
                     // Các service Node.js: Docker multi-stage tự build (không cần Maven)
                     def nodeServices = ['storefront', 'backoffice']
 
-                    // Service có Dockerfile multi-stage Maven (context = root)
-                    def multiStageServices = ['delivery']
+                    // Không còn service nào dùng multi-stage Maven trong Docker
+                    def multiStageServices = []
 
                     def allServices = javaServices + nodeServices + multiStageServices
 
@@ -80,13 +81,8 @@ pipeline {
                             echo "--- Build & Push cho service: ${service} ---"
                             def imageName = "${env.DOCKERHUB_USERNAME}/yas-${service}"
 
-                            if (multiStageServices.contains(service)) {
-                                // delivery/automation-ui: Dockerfile multi-stage, context = root (.)
-                                sh "docker build -t ${imageName}:${env.COMMIT_ID} -t ${imageName}:latest -f ${service}/Dockerfile ."
-                            } else {
-                                // Java đơn giản + Node.js: context = thư mục service
-                                sh "docker build -t ${imageName}:${env.COMMIT_ID} -t ${imageName}:latest -f ${service}/Dockerfile ${service}"
-                            }
+                            // Tất cả service (Java + Node.js): context = thư mục service
+                            sh "docker build -t ${imageName}:${env.COMMIT_ID} -t ${imageName}:latest -f ${service}/Dockerfile ${service}"
 
                             sh "docker push ${imageName}:${env.COMMIT_ID}"
                             sh "docker push ${imageName}:latest"
