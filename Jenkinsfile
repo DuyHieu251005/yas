@@ -57,9 +57,13 @@ pipeline {
                         // === BƯỚC 1: Build Maven cho các service Java (nếu có) ===
                         def javaServicesToBuild = servicesToBuild.findAll { javaServices.contains(it) }
                         if (!javaServicesToBuild.isEmpty()) {
-                            echo "=> Đang compile các Java service bằng Maven..."
-                            withEnv(['MAVEN_OPTS=-Xmx512m']) {
-                                sh "mvn clean package -DskipTests"
+                            echo "=> Đang compile các Java service bằng Maven (Java 25)..."
+                            withEnv([
+                                'JAVA_HOME=/usr/lib/jvm/temurin-25-jdk-amd64',
+                                'PATH=/usr/lib/jvm/temurin-25-jdk-amd64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+                                'MAVEN_OPTS=-Xmx512m'
+                            ]) {
+                                sh "java -version && mvn clean package -DskipTests"
                             }
                         }
 
