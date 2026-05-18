@@ -57,15 +57,8 @@ pipeline {
                         // === BƯỚC 1: Build Maven cho các service Java (nếu có) ===
                         def javaServicesToBuild = servicesToBuild.findAll { javaServices.contains(it) }
                         if (!javaServicesToBuild.isEmpty()) {
-                            echo "=> Đang compile các Java service bằng Maven (trong Docker)..."
-                            sh """
-                                docker run --rm \
-                                    -v \$(pwd):/workspace \
-                                    -v maven-repo:/root/.m2 \
-                                    -w /workspace \
-                                    maven:3.9.15-eclipse-temurin-25-noble \
-                                    mvn clean package -DskipTests
-                            """
+                            echo "=> Đang compile các Java service bằng Maven..."
+                            sh "mvn clean package -DskipTests -Xmx512m"
                         }
 
                         // === BƯỚC 2: Build & Push Docker image cho từng service ===
