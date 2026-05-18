@@ -58,7 +58,9 @@ pipeline {
                         def javaServicesToBuild = servicesToBuild.findAll { javaServices.contains(it) }
                         if (!javaServicesToBuild.isEmpty()) {
                             echo "=> Đang compile các Java service bằng Maven..."
-                            sh "mvn clean package -DskipTests -Xmx512m"
+                            withEnv(['MAVEN_OPTS=-Xmx512m']) {
+                                sh "mvn clean package -DskipTests"
+                            }
                         }
 
                         // === BƯỚC 2: Build & Push Docker image cho từng service ===
