@@ -1,12 +1,6 @@
-FROM maven:3.9.6-eclipse-temurin-21 AS builder
-WORKDIR /app
-COPY pom.xml .
-COPY common-library ./common-library
-COPY search ./search
-RUN mvn -pl search -am clean package -DskipTests
-
-FROM eclipse-temurin:21-jre-alpine
-ENV TZ=Asia/Ho_Chi_Minh
-WORKDIR /app
-COPY --from=builder /app/search/target/*.jar app.jar
-ENTRYPOINT ["java", "-Xmx256m", "-Xms256m", "-jar", "app.jar"]
+FROM eclipse-temurin:25-jre-alpine
+RUN apk add --no-cache bash
+COPY target/search*.jar app.jar
+COPY wait-for-it.sh wait-for-it.sh
+RUN chmod +x wait-for-it.sh
+ENTRYPOINT ["java", "-jar", "/app.jar"]

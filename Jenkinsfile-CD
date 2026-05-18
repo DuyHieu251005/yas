@@ -4,7 +4,6 @@ pipeline {
     parameters {
         string(name: 'cart_branch', defaultValue: 'main', description: 'Branch cho cart')
         string(name: 'customer_branch', defaultValue: 'main', description: 'Branch cho customer')
-        string(name: 'delivery_branch', defaultValue: 'main', description: 'Branch cho delivery')
         string(name: 'inventory_branch', defaultValue: 'main', description: 'Branch cho inventory')
         string(name: 'location_branch', defaultValue: 'main', description: 'Branch cho location')
         string(name: 'media_branch', defaultValue: 'main', description: 'Branch cho media')
@@ -22,51 +21,57 @@ pipeline {
         string(name: 'storefront_branch', defaultValue: 'main', description: 'Branch cho storefront')
         string(name: 'storefront_bff_branch', defaultValue: 'main', description: 'Branch cho storefront-bff')
         string(name: 'backoffice_bff_branch', defaultValue: 'main', description: 'Branch cho backoffice-bff')
+        string(name: 'sampledata_branch', defaultValue: 'main', description: 'Branch cho sampledata')
     }
 
     environment {
         DOCKERHUB_USERNAME = 'duyhieu2005'
         K8S_NAMESPACE = 'yas-app'
-        WORKER_NODE_IP = '192.168.x.x' // IP của k8s worker node
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
         stage('Deploy Services to K8s') {
             steps {
                 script {
-                    // Danh sách map các chart với tham số nhánh từ UI
+                    // Map: service_name -> [chart_name, branch_param]
+                    // chart_name phải khớp với tên thư mục trong k8s/charts/
                     def services = [
-                        'cart': params.cart_branch,
-                        'customer': params.customer_branch,
-                        'delivery': params.delivery_branch,
-                        'inventory': params.inventory_branch,
-                        'location': params.location_branch,
-                        'media': params.media_branch,
-                        'order': params.order_branch,
-                        'payment': params.payment_branch,
-                        'payment-paypal': params.payment_paypal_branch,
-                        'product': params.product_branch,
-                        'promotion': params.promotion_branch,
-                        'rating': params.rating_branch,
-                        'recommendation': params.recommendation_branch,
-                        'search': params.search_branch,
-                        'tax': params.tax_branch,
-                        'webhook': params.webhook_branch,
-                        'backoffice': params.backoffice_branch,
-                        'storefront': params.storefront_branch,
-                        'storefront-bff': params.storefront_bff_branch,
-                        'backoffice-bff': params.backoffice_bff_branch
+                        ['cart',            'cart',            params.cart_branch],
+                        ['customer',        'customer',        params.customer_branch],
+                        ['inventory',       'inventory',       params.inventory_branch],
+                        ['location',        'location',        params.location_branch],
+                        ['media',           'media',           params.media_branch],
+                        ['order',           'order',           params.order_branch],
+                        ['payment',         'payment',         params.payment_branch],
+                        ['payment-paypal',  'payment-paypal',  params.payment_paypal_branch],
+                        ['product',         'product',         params.product_branch],
+                        ['promotion',       'promotion',       params.promotion_branch],
+                        ['rating',          'rating',          params.rating_branch],
+                        ['recommendation',  'recommendation',  params.recommendation_branch],
+                        ['search',          'search',          params.search_branch],
+                        ['tax',             'tax',             params.tax_branch],
+                        ['webhook',         'webhook',         params.webhook_branch],
+                        ['backoffice',      'backoffice-ui',   params.backoffice_branch],
+                        ['storefront',      'storefront-ui',   params.storefront_branch],
+                        ['storefront-bff',  'storefront-bff',  params.storefront_bff_branch],
+                        ['backoffice-bff',  'backoffice-bff',  params.backoffice_bff_branch],
+                        ['sampledata',      'sampledata',      params.sampledata_branch]
                     ]
-                    
-                    for (entry in services) {
-                        def service = entry.key
-                        def branch = entry.value
-                        
+
+                    for (svc in services) {
+                        def serviceName = svc[0]
+                        def chartName   = svc[1]
+                        def branch      = svc[2]
+
                         def tagToDeploy = 'latest'
-                        
-                        // Nếu developer truyền vào nhánh dev (khác main)
+
                         if (branch && branch != 'main') {
-                            // Lấy mã commit ngắn nhất (7 ký tự) của nhánh dev đó trên repo origin
                             def commitId = sh(script: "git ls-remote origin ${branch} | head -n 1 | cut -c1-7", returnStdout: true).trim()
                             if (commitId) {
                                 tagToDeploy = commitId
@@ -75,15 +80,13 @@ pipeline {
                             }
                         }
 
-                        echo "=> Đang Deploy service: ${service} - Tag sử dụng: ${tagToDeploy}"
-                        
-                        // Sử dụng Helm để update hoặc cài đặt service
-                        // Cấu hình service type là NodePort để dev test local
+                        echo "=> Đang Deploy service: ${serviceName} (chart: ${chartName}) - Tag: ${tagToDeploy}"
+
                         sh """
-                        helm dependency build k8s/charts/${service}
-                        helm upgrade --install ${service} k8s/charts/${service} \
+                        helm dependency build k8s/charts/${chartName} 2>/dev/null || true
+                        helm upgrade --install ${serviceName} k8s/charts/${chartName} \
                             --namespace ${env.K8S_NAMESPACE} --create-namespace \
-                            --set backend.image.repository=${env.DOCKERHUB_USERNAME}/yas-${service} \
+                            --set backend.image.repository=${env.DOCKERHUB_USERNAME}/yas-${serviceName} \
                             --set backend.image.tag=${tagToDeploy} \
                             --set service.type=NodePort
                         """
@@ -91,15 +94,12 @@ pipeline {
                 }
             }
         }
-        
-        stage('Get NodePort Endpoint') {
+
+        stage('Get Endpoints') {
             steps {
                 script {
-                    echo "============== ENDPOINTS CHO DEVELOPER TEST =============="
-                    echo "Vui lòng map IP của K8s Worker Node (${env.WORKER_NODE_IP}) với file /etc/hosts theo các URL sau:"
-                    sh """
-                    kubectl get svc -n ${env.K8S_NAMESPACE} | grep NodePort
-                    """
+                    echo "============== ENDPOINTS ĐÃ DEPLOY =============="
+                    sh "kubectl get svc -n ${env.K8S_NAMESPACE}"
                 }
             }
         }

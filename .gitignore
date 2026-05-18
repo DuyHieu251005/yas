@@ -28,13 +28,8 @@ node_modules/
 # Python & Temporary Debug Scripts
 __pycache__/
 *.pyc
+*.py
 .venv/
-check_all.py
-check_vm.py
-fixed_install.py
-run_ssh_install.py
-update_dockerfiles.py
-verify_install.py
 install-yas-env.sh
 
 # OS Files
@@ -55,3 +50,6 @@ Thumbs.db
 
 # virtual machine crash logs
 hs_err_pid*
+
+# Tempo data
+tempo-data/

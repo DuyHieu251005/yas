@@ -2,9 +2,8 @@ pipeline {
     agent any
 
     environment {
-        // Tên đăng nhập Docker Hub sẽ tự động lấy từ Jenkins Credentials
         DOCKERHUB_USERNAME = 'duyhieu2005'
-        DOCKER_CREDS = credentials('dockerhub-credentials') // Tên của credential tạo trên Jenkins
+        DOCKER_CREDS = credentials('dockerhub-credentials')
     }
 
     stages {
@@ -12,7 +11,6 @@ pipeline {
             steps {
                 checkout scm
                 script {
-                    // Lấy mã Commit ID ngắn (7 ký tự)
                     env.COMMIT_ID = sh(script: 'git rev-parse --short=7 HEAD', returnStdout: true).trim()
                     echo "Commit ID hiện tại: ${env.COMMIT_ID}"
                 }
@@ -22,41 +20,69 @@ pipeline {
         stage('Detect Changes & Build Images') {
             steps {
                 script {
-                    // Xác định các service có code thay đổi so với commit trước đó
-                    // Nếu là lần đầu tiên run, có thể không dùng HEAD~1 được, tuỳ setup Jenkins
                     def changedFiles = sh(script: "git diff-tree --no-commit-id --name-only -r HEAD", returnStdout: true).trim().split('\n')
-                    
-                    def allServices = [
-                        'cart', 'customer', 'delivery', 'inventory', 'location', 
-                        'media', 'order', 'payment', 'payment-paypal', 'product', 
-                        'promotion', 'rating', 'recommendation', 'search', 'tax', 
-                        'webhook', 'backoffice', 'storefront', 'storefront-bff', 'backoffice-bff'
+
+                    // Các service Java đơn giản: Maven build từ root, Docker COPY jar
+                    def javaServices = [
+                        'cart', 'customer', 'inventory', 'location',
+                        'media', 'order', 'payment', 'payment-paypal', 'product',
+                        'promotion', 'rating', 'recommendation', 'search', 'tax',
+                        'webhook', 'backoffice-bff', 'storefront-bff', 'sampledata'
                     ]
-                    
+
+                    // Các service Node.js: Docker multi-stage tự build (không cần Maven)
+                    def nodeServices = ['storefront', 'backoffice']
+
+                    // Service có Dockerfile multi-stage Maven (context = root)
+                    def multiStageServices = ['delivery']
+
+                    def allServices = javaServices + nodeServices + multiStageServices
+
                     def servicesToBuild = []
-                    
                     for (file in changedFiles) {
                         def topDir = file.split('/')[0]
                         if (allServices.contains(topDir) && !servicesToBuild.contains(topDir)) {
                             servicesToBuild.add(topDir)
                         }
                     }
-                    
+
                     if (servicesToBuild.isEmpty()) {
                         echo "=> Không phát hiện thay đổi ở các folder service, bỏ qua bước build."
                     } else {
                         echo "=> Cần build các service sau: ${servicesToBuild.join(', ')}"
-                        
+
                         echo "=> Đăng nhập DockerHub..."
                         sh "echo ${DOCKER_CREDS_PSW} | docker login -u ${DOCKER_CREDS_USR} --password-stdin"
-                        
+
+                        // === BƯỚC 1: Build Maven cho các service Java (nếu có) ===
+                        def javaServicesToBuild = servicesToBuild.findAll { javaServices.contains(it) }
+                        if (!javaServicesToBuild.isEmpty()) {
+                            echo "=> Đang compile các Java service bằng Maven (trong Docker)..."
+                            // Dùng Maven Docker image để build, mount source code vào
+                            // Kết quả jar sẽ nằm trong target/ của mỗi service
+                            sh """
+                                docker run --rm \
+                                    -v \$(pwd):/workspace \
+                                    -v maven-repo:/root/.m2 \
+                                    -w /workspace \
+                                    maven:3.9.15-eclipse-temurin-25-noble \
+                                    mvn clean package -DskipTests -pl ${javaServicesToBuild.join(',')} -am
+                            """
+                        }
+
+                        // === BƯỚC 2: Build & Push Docker image cho từng service ===
                         for (service in servicesToBuild) {
                             echo "--- Build & Push cho service: ${service} ---"
                             def imageName = "${env.DOCKERHUB_USERNAME}/yas-${service}"
-                            
-                            // Context lệnh build là thư mục gốc (.) để hỗ trợ Multi-module Maven (copy chung common-library)
-                            sh "docker build -t ${imageName}:${env.COMMIT_ID} -t ${imageName}:latest -f ${service}/Dockerfile ."
-                            
+
+                            if (multiStageServices.contains(service)) {
+                                // delivery/automation-ui: Dockerfile multi-stage, context = root (.)
+                                sh "docker build -t ${imageName}:${env.COMMIT_ID} -t ${imageName}:latest -f ${service}/Dockerfile ."
+                            } else {
+                                // Java đơn giản + Node.js: context = thư mục service
+                                sh "docker build -t ${imageName}:${env.COMMIT_ID} -t ${imageName}:latest -f ${service}/Dockerfile ${service}"
+                            }
+
                             sh "docker push ${imageName}:${env.COMMIT_ID}"
                             sh "docker push ${imageName}:latest"
                         }
