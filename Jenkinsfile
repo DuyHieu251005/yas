@@ -58,15 +58,13 @@ pipeline {
                         def javaServicesToBuild = servicesToBuild.findAll { javaServices.contains(it) }
                         if (!javaServicesToBuild.isEmpty()) {
                             echo "=> Đang compile các Java service bằng Maven (trong Docker)..."
-                            // Dùng Maven Docker image để build, mount source code vào
-                            // Kết quả jar sẽ nằm trong target/ của mỗi service
                             sh """
                                 docker run --rm \
                                     -v \$(pwd):/workspace \
                                     -v maven-repo:/root/.m2 \
                                     -w /workspace \
                                     maven:3.9.15-eclipse-temurin-25-noble \
-                                    mvn clean package -DskipTests -pl ${javaServicesToBuild.join(',')} -am
+                                    mvn clean package -DskipTests
                             """
                         }
 
