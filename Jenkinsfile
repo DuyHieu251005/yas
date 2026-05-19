@@ -76,7 +76,7 @@ pipeline {
                                 'PATH=/usr/lib/jvm/temurin-25-jdk-amd64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
                                 'MAVEN_OPTS=-Xmx512m'
                             ]) {
-                                sh "java -version && mvn clean package -DskipTests"
+                                sh "java -version && mvn -B clean package -DskipTests"
                             }
                         }
 
