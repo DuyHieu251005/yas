@@ -125,7 +125,7 @@ pipeline {
                     """
 
                     // In hyperlink đến job Cleanup_Deployment (MỤC 5 ĐỒ ÁN)
-                    def cleanupUrl = "${env.JENKINS_URL}job/Cleanup_Deployment/"
+                    def cleanupUrl = "${env.JENKINS_URL}job/Delete_Deployment/"
                     echo "============== MỤC 5: XÓA TRIỂN KHAI =============="
                     echo "Sau khi test xong, bấm vào link sau để chạy job dọn dẹp môi trường:"
                     echo "🗑️  Cleanup Job: ${cleanupUrl}"
