@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: yas-staging
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/DuyHieu251005/yas.git
+    targetRevision: HEAD  # Will be overridden to specific release tags like v1.2.3
+    path: k8s/charts
+    directory:
+      recurse: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: yas-staging
+  syncPolicy:
+    syncOptions:
+    - CreateNamespace=true
+    # Staging: manual sync only (no automated) - triggered by tag
