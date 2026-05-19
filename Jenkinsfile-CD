@@ -104,6 +104,23 @@ pipeline {
                 script {
                     echo "============== ENDPOINTS ĐÃ DEPLOY =============="
                     sh "kubectl get svc -n ${env.K8S_NAMESPACE}"
+                    
+                    echo "============== HƯỚNG DẪN TRUY CẬP (YÊU CẦU MỤC 4) =============="
+                    def storefrontPort = sh(script: "kubectl get svc storefront-bff -n ${env.K8S_NAMESPACE} -o jsonpath='{.spec.ports[?(@.port==80)].nodePort}'", returnStdout: true).trim()
+                    def backofficePort = sh(script: "kubectl get svc backoffice-bff -n ${env.K8S_NAMESPACE} -o jsonpath='{.spec.ports[?(@.port==80)].nodePort}'", returnStdout: true).trim()
+
+                    echo """
+                    ĐỂ DEVELOPER TEST TRỰC TIẾP QUA DOMAIN NAME (MỤC 4 ĐỒ ÁN):
+                    
+                    1. Mở file C:\\Windows\\System32\\drivers\\etc\\hosts (bằng quyền Administrator)
+                    2. Thêm 2 dòng sau vào cuối file để trỏ tới Worker Node K8s (192.168.1.22):
+                       192.168.1.22 storefront.yas.local.com
+                       192.168.1.22 backoffice.yas.local.com
+                       
+                    3. Mở trình duyệt và truy cập (theo định dạng domain name:port):
+                       👉 Storefront: http://storefront.yas.local.com:${storefrontPort}
+                       👉 Backoffice: http://backoffice.yas.local.com:${backofficePort}
+                    """
                 }
             }
         }
