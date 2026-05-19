@@ -90,6 +90,8 @@ pipeline {
                             --set ui.image.repository=${env.DOCKERHUB_USERNAME}/yas-${serviceName} \
                             --set backend.image.tag=${tagToDeploy} \
                             --set ui.image.tag=${tagToDeploy} \
+                            --set backend.image.pullPolicy=Always \
+                            --set ui.image.pullPolicy=Always \
                             --set backend.serviceMonitor.enabled=false \
                             --set backend.service.type=NodePort \
                             --set ui.service.type=NodePort
