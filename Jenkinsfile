@@ -26,13 +26,13 @@ pipeline {
                 script {
                     def changedFiles = sh(script: "git diff-tree --no-commit-id --name-only -r HEAD", returnStdout: true).trim().split('\n')
 
+                    // 🟢 Chỉ build 13 services cốt lõi (theo danh sách thầy)
                     // Các service Java: Maven build từ root, Docker COPY jar từ target/
                     def javaServices = [
-                        'cart', 'customer', 'inventory', 'location',
-                        'media', 'order', 'payment', 'payment-paypal', 'product',
-                        'promotion', 'rating', 'recommendation', 'search', 'tax',
-                        'webhook', 'backoffice-bff', 'storefront-bff', 'sampledata',
-                        'delivery'
+                        'cart', 'customer', 'inventory',
+                        'media', 'order', 'product',
+                        'search', 'tax',
+                        'backoffice-bff', 'storefront-bff'
                     ]
 
                     // Các service Node.js: Docker multi-stage tự build (không cần Maven)

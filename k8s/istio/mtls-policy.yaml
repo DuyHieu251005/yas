@@ -1,0 +1,21 @@
+# mTLS Policy - Bật mTLS STRICT cho toàn bộ namespace yas-app
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: yas-mtls-strict
+  namespace: yas-app
+spec:
+  mtls:
+    mode: STRICT
+---
+# DestinationRule - Enforce mTLS khi gọi tới các service trong yas-app
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: yas-mtls-destination
+  namespace: yas-app
+spec:
+  host: "*.yas-app.svc.cluster.local"
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL

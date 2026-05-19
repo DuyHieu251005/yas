@@ -1,0 +1,148 @@
+# ============================================================
+# AUTHORIZATION POLICIES - Giới hạn service-to-service access
+# ============================================================
+
+# 1. Default DENY ALL - Chặn tất cả inbound traffic trong yas-app
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: deny-all-default
+  namespace: yas-app
+spec: {}  # empty spec = deny all
+
+---
+# 2. Cho phép storefront-bff gọi tới các backend service
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-storefront-bff-to-backends
+  namespace: yas-app
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      app: product
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/yas-app/sa/storefront-bff"
+              - "cluster.local/ns/yas-app/sa/backoffice-bff"
+      to:
+        - operation:
+            methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
+---
+# 3. Cho phép storefront-bff gọi cart
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-bff-to-cart
+  namespace: yas-app
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      app: cart
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/yas-app/sa/storefront-bff"
+              - "cluster.local/ns/yas-app/sa/backoffice-bff"
+---
+# 4. Cho phép storefront-bff gọi order
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-bff-to-order
+  namespace: yas-app
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      app: order
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/yas-app/sa/storefront-bff"
+              - "cluster.local/ns/yas-app/sa/backoffice-bff"
+---
+# 5. Cho phép storefront-bff gọi customer
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-bff-to-customer
+  namespace: yas-app
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      app: customer
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/yas-app/sa/storefront-bff"
+              - "cluster.local/ns/yas-app/sa/backoffice-bff"
+---
+# 6. Cho phép Prometheus scrape metrics từ tất cả service
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: yas-app
+spec:
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            namespaces: ["monitoring", "istio-system"]
+      to:
+        - operation:
+            paths: ["/actuator/prometheus", "/actuator/health"]
+            methods: ["GET"]
+---
+# 7. Cho phép Ingress/Traefik gọi BFF từ bên ngoài
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-ingress-to-bff
+  namespace: yas-app
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      app: storefront-bff
+  rules:
+    - from:
+        - source:
+            namespaces: ["kube-system", "istio-system"]
+    - from:
+        - source:
+            notNamespaces: []
+      to:
+        - operation:
+            methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+---
+# 8. Cho phép Ingress/Traefik gọi backoffice-bff
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-ingress-to-backoffice-bff
+  namespace: yas-app
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      app: backoffice-bff
+  rules:
+    - from:
+        - source:
+            namespaces: ["kube-system", "istio-system"]
+    - from:
+        - source:
+            notNamespaces: []
+      to:
+        - operation:
+            methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]

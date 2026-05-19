@@ -1,16 +1,83 @@
-apiVersion: networking.istio.io/v1alpha3
+# Retry Policy cho product service (ví dụ minh hoạ retry khi gặp lỗi 5xx)
+apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
-  name: product-retry
+  name: product-retry-policy
   namespace: yas-app
 spec:
   hosts:
-  - product
+    - product
   http:
-  - route:
-    - destination:
-        host: product
-    retries:
-      attempts: 3
-      perTryTimeout: 2s
-      retryOn: gateway-error,connect-failure,refused-stream,500
+    - timeout: 10s
+      retries:
+        attempts: 3
+        perTryTimeout: 3s
+        retryOn: "5xx,reset,connect-failure,retriable-4xx"
+      route:
+        - destination:
+            host: product
+            port:
+              number: 80
+---
+# Retry Policy cho cart service
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: cart-retry-policy
+  namespace: yas-app
+spec:
+  hosts:
+    - cart
+  http:
+    - timeout: 10s
+      retries:
+        attempts: 3
+        perTryTimeout: 3s
+        retryOn: "5xx,reset,connect-failure,retriable-4xx"
+      route:
+        - destination:
+            host: cart
+            port:
+              number: 80
+---
+# Retry Policy cho order service
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: order-retry-policy
+  namespace: yas-app
+spec:
+  hosts:
+    - order
+  http:
+    - timeout: 10s
+      retries:
+        attempts: 3
+        perTryTimeout: 3s
+        retryOn: "5xx,reset,connect-failure,retriable-4xx"
+      route:
+        - destination:
+            host: order
+            port:
+              number: 80
+---
+# Retry Policy cho storefront-bff
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: storefront-bff-retry-policy
+  namespace: yas-app
+spec:
+  hosts:
+    - storefront-bff
+  http:
+    - timeout: 15s
+      retries:
+        attempts: 3
+        perTryTimeout: 5s
+        retryOn: "5xx,reset,connect-failure,retriable-4xx"
+      route:
+        - destination:
+            host: storefront-bff
+            port:
+              number: 80

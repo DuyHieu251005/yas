@@ -1,0 +1,60 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: yas-staging-services
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          # 🟢 13 services cốt lõi (theo yêu cầu thầy)
+          - service: yas-configuration
+          - service: swagger-ui
+          - service: cart
+          - service: customer
+          - service: inventory
+          - service: media
+          - service: order
+          - service: product
+          - service: search
+          - service: tax
+          - service: storefront-bff
+          - service: backoffice-bff
+          - service: storefront-ui
+          - service: backoffice-ui
+  template:
+    metadata:
+      name: "yas-staging-{{service}}"
+      namespace: argocd
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/DuyHieu251005/yas.git
+        # staging tracks git tags (releases)
+        targetRevision: HEAD
+        path: "k8s/charts/{{service}}"
+        helm:
+          parameters:
+            - name: backend.image.tag
+              value: latest
+            - name: ui.image.tag
+              value: latest
+            - name: backend.image.pullPolicy
+              value: Always
+            - name: ui.image.pullPolicy
+              value: Always
+            - name: backend.service.type
+              value: NodePort
+            - name: ui.service.type
+              value: NodePort
+            - name: backend.image.repository
+              value: "duyhieu2005/yas-{{service}}"
+            - name: ui.image.repository
+              value: "duyhieu2005/yas-{{service}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: yas-staging
+      syncPolicy:
+        # staging: manual sync - do not auto-deploy
+        syncOptions:
+          - CreateNamespace=true

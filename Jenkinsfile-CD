@@ -1,27 +1,20 @@
 pipeline {
     agent any
 
+    // 🟢 13 services cốt lõi (theo yêu cầu thầy)
     parameters {
-        string(name: 'cart_branch', defaultValue: 'main', description: 'Branch cho cart')
-        string(name: 'customer_branch', defaultValue: 'main', description: 'Branch cho customer')
-        string(name: 'inventory_branch', defaultValue: 'main', description: 'Branch cho inventory')
-        string(name: 'location_branch', defaultValue: 'main', description: 'Branch cho location')
-        string(name: 'media_branch', defaultValue: 'main', description: 'Branch cho media')
-        string(name: 'order_branch', defaultValue: 'main', description: 'Branch cho order')
-        string(name: 'payment_branch', defaultValue: 'main', description: 'Branch cho payment')
-        string(name: 'payment_paypal_branch', defaultValue: 'main', description: 'Branch cho payment-paypal')
-        string(name: 'product_branch', defaultValue: 'main', description: 'Branch cho product')
-        string(name: 'promotion_branch', defaultValue: 'main', description: 'Branch cho promotion')
-        string(name: 'rating_branch', defaultValue: 'main', description: 'Branch cho rating')
-        string(name: 'recommendation_branch', defaultValue: 'main', description: 'Branch cho recommendation')
-        string(name: 'search_branch', defaultValue: 'main', description: 'Branch cho search')
-        string(name: 'tax_branch', defaultValue: 'main', description: 'Branch cho tax')
-        string(name: 'webhook_branch', defaultValue: 'main', description: 'Branch cho webhook')
-        string(name: 'backoffice_branch', defaultValue: 'main', description: 'Branch cho backoffice')
-        string(name: 'storefront_branch', defaultValue: 'main', description: 'Branch cho storefront')
+        string(name: 'cart_branch',          defaultValue: 'main', description: 'Branch cho cart')
+        string(name: 'customer_branch',      defaultValue: 'main', description: 'Branch cho customer')
+        string(name: 'inventory_branch',     defaultValue: 'main', description: 'Branch cho inventory')
+        string(name: 'media_branch',         defaultValue: 'main', description: 'Branch cho media')
+        string(name: 'order_branch',         defaultValue: 'main', description: 'Branch cho order')
+        string(name: 'product_branch',       defaultValue: 'main', description: 'Branch cho product')
+        string(name: 'search_branch',        defaultValue: 'main', description: 'Branch cho search')
+        string(name: 'tax_branch',           defaultValue: 'main', description: 'Branch cho tax')
+        string(name: 'backoffice_branch',    defaultValue: 'main', description: 'Branch cho backoffice (UI)')
+        string(name: 'storefront_branch',    defaultValue: 'main', description: 'Branch cho storefront (UI)')
         string(name: 'storefront_bff_branch', defaultValue: 'main', description: 'Branch cho storefront-bff')
         string(name: 'backoffice_bff_branch', defaultValue: 'main', description: 'Branch cho backoffice-bff')
-        string(name: 'sampledata_branch', defaultValue: 'main', description: 'Branch cho sampledata')
     }
 
     environment {
@@ -40,30 +33,22 @@ pipeline {
             steps {
                 script {
                     // Map: service_name -> [chart_name, branch_param]
-                    // chart_name phải khớp với tên thư mục trong k8s/charts/
+                    // 🟢 Chỉ deploy 13 services cốt lõi (theo yêu cầu thầy)
                     def services = [
                         ['yas-configuration', 'yas-configuration', 'main'],
-                        ['swagger-ui',      'swagger-ui',      'main'],
-                        ['cart',            'cart',            params.cart_branch],
-                        ['customer',        'customer',        params.customer_branch],
-                        ['inventory',       'inventory',       params.inventory_branch],
-                        ['location',        'location',        params.location_branch],
-                        ['media',           'media',           params.media_branch],
-                        ['order',           'order',           params.order_branch],
-                        ['payment',         'payment',         params.payment_branch],
-                        ['payment-paypal',  'payment-paypal',  params.payment_paypal_branch],
-                        ['product',         'product',         params.product_branch],
-                        ['promotion',       'promotion',       params.promotion_branch],
-                        ['rating',          'rating',          params.rating_branch],
-                        ['recommendation',  'recommendation',  params.recommendation_branch],
-                        ['search',          'search',          params.search_branch],
-                        ['tax',             'tax',             params.tax_branch],
-                        ['webhook',         'webhook',         params.webhook_branch],
-                        ['backoffice',      'backoffice-ui',   params.backoffice_branch],
-                        ['storefront',      'storefront-ui',   params.storefront_branch],
-                        ['storefront-bff',  'storefront-bff',  params.storefront_bff_branch],
-                        ['backoffice-bff',  'backoffice-bff',  params.backoffice_bff_branch],
-                        ['sampledata',      'sampledata',      params.sampledata_branch]
+                        ['swagger-ui',        'swagger-ui',        'main'],
+                        ['cart',              'cart',              params.cart_branch],
+                        ['customer',          'customer',          params.customer_branch],
+                        ['inventory',         'inventory',         params.inventory_branch],
+                        ['media',             'media',             params.media_branch],
+                        ['order',             'order',             params.order_branch],
+                        ['product',           'product',           params.product_branch],
+                        ['search',            'search',            params.search_branch],
+                        ['tax',               'tax',               params.tax_branch],
+                        ['backoffice',        'backoffice-ui',      params.backoffice_branch],
+                        ['storefront',        'storefront-ui',      params.storefront_branch],
+                        ['storefront-bff',    'storefront-bff',    params.storefront_bff_branch],
+                        ['backoffice-bff',    'backoffice-bff',    params.backoffice_bff_branch]
                     ]
 
                     for (svc in services) {
