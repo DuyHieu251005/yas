@@ -12,8 +12,10 @@ backend:
 
   ingress:
     enabled: true
+    className: traefik
     host: storefront.yas.local.com
     path: /
+    pathType: Prefix
 
   extraEnvs:
     - name: SPRING_PROFILES_ACTIVE

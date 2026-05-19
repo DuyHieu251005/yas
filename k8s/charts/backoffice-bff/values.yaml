@@ -10,8 +10,10 @@ backend:
       configmap.reloader.stakater.com/reload: "yas-gateway-routes-config-configmap,backoffice-bff-extra-configmap"
   ingress:
     enabled: true
+    className: traefik
     host: backoffice.yas.local.com
     path: /
+    pathType: Prefix
   extraEnvs:
     - name: SPRING_PROFILES_ACTIVE
       value: prod
