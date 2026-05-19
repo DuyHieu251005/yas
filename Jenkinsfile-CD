@@ -87,9 +87,12 @@ pipeline {
                         helm upgrade --install ${serviceName} k8s/charts/${chartName} \
                             --namespace ${env.K8S_NAMESPACE} --create-namespace \
                             --set backend.image.repository=${env.DOCKERHUB_USERNAME}/yas-${serviceName} \
+                            --set ui.image.repository=${env.DOCKERHUB_USERNAME}/yas-${serviceName} \
                             --set backend.image.tag=${tagToDeploy} \
+                            --set ui.image.tag=${tagToDeploy} \
                             --set backend.serviceMonitor.enabled=false \
-                            --set service.type=NodePort
+                            --set backend.service.type=NodePort \
+                            --set ui.service.type=NodePort
                         """
                     }
                 }
