@@ -1,0 +1,39 @@
+# ==============================================================
+# Cho phép kết nối thường (PERMISSIVE) cho storefront-ui, backoffice-ui và swagger-ui
+# Để trình duyệt bên ngoài có thể truy cập qua NodePort không bị lỗi ERR_CONNECTION_RESET
+# ==============================================================
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: storefront-ui-permissive
+  namespace: yas-app
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: storefront-ui
+  mtls:
+    mode: PERMISSIVE
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: backoffice-ui-permissive
+  namespace: yas-app
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: backoffice-ui
+  mtls:
+    mode: PERMISSIVE
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: swagger-ui-permissive
+  namespace: yas-app
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: swagger-ui
+  mtls:
+    mode: PERMISSIVE

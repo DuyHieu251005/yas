@@ -26,7 +26,6 @@ spec:
             principals:
               - "cluster.local/ns/yas-app/sa/storefront-bff"
               - "cluster.local/ns/yas-app/sa/backoffice-bff"
-              - "cluster.local/ns/yas-app/sa/default"
 ---
 # cart: chỉ nhận từ storefront-bff
 apiVersion: security.istio.io/v1beta1
@@ -45,7 +44,6 @@ spec:
             namespaces: ["yas-app"]
             principals:
               - "cluster.local/ns/yas-app/sa/storefront-bff"
-              - "cluster.local/ns/yas-app/sa/default"
 ---
 # order: chỉ nhận từ storefront-bff
 apiVersion: security.istio.io/v1beta1
@@ -64,7 +62,6 @@ spec:
             namespaces: ["yas-app"]
             principals:
               - "cluster.local/ns/yas-app/sa/storefront-bff"
-              - "cluster.local/ns/yas-app/sa/default"
 ---
 # customer: nhận từ storefront-bff và backoffice-bff
 apiVersion: security.istio.io/v1beta1
@@ -84,7 +81,6 @@ spec:
             principals:
               - "cluster.local/ns/yas-app/sa/storefront-bff"
               - "cluster.local/ns/yas-app/sa/backoffice-bff"
-              - "cluster.local/ns/yas-app/sa/default"
 ---
 # inventory: nhận từ order và backoffice-bff
 apiVersion: security.istio.io/v1beta1
@@ -104,7 +100,6 @@ spec:
             principals:
               - "cluster.local/ns/yas-app/sa/order"
               - "cluster.local/ns/yas-app/sa/backoffice-bff"
-              - "cluster.local/ns/yas-app/sa/default"
 ---
 # tax: chỉ nhận từ order
 apiVersion: security.istio.io/v1beta1
@@ -123,7 +118,6 @@ spec:
             namespaces: ["yas-app"]
             principals:
               - "cluster.local/ns/yas-app/sa/order"
-              - "cluster.local/ns/yas-app/sa/default"
 ---
 # search: chỉ nhận từ storefront-bff
 apiVersion: security.istio.io/v1beta1
@@ -142,7 +136,6 @@ spec:
             namespaces: ["yas-app"]
             principals:
               - "cluster.local/ns/yas-app/sa/storefront-bff"
-              - "cluster.local/ns/yas-app/sa/default"
 ---
 # media: nhận từ backoffice-bff và storefront-bff
 apiVersion: security.istio.io/v1beta1
@@ -162,4 +155,3 @@ spec:
             principals:
               - "cluster.local/ns/yas-app/sa/backoffice-bff"
               - "cluster.local/ns/yas-app/sa/storefront-bff"
-              - "cluster.local/ns/yas-app/sa/default"

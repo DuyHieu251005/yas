@@ -18,6 +18,8 @@ spec:
       route:
         - destination:
             host: product
+            port:
+              number: 80
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -35,6 +37,8 @@ spec:
       route:
         - destination:
             host: cart
+            port:
+              number: 80
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -52,6 +56,8 @@ spec:
       route:
         - destination:
             host: order
+            port:
+              number: 80
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -69,6 +75,8 @@ spec:
       route:
         - destination:
             host: inventory
+            port:
+              number: 80
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -86,6 +94,8 @@ spec:
       route:
         - destination:
             host: tax
+            port:
+              number: 80
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -103,3 +113,5 @@ spec:
       route:
         - destination:
             host: search
+            port:
+              number: 80
