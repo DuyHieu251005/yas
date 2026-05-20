@@ -213,6 +213,7 @@ backofficeBffExtraConfig:
         client:
           provider:
             keycloak:
+              issuer-uri: ""
               authorization-uri: http://identity.yas.local.com/realms/Yas/protocol/openid-connect/auth
               token-uri: http://keycloak.keycloak.svc.cluster.local:8080/realms/Yas/protocol/openid-connect/token
               jwk-set-uri: http://keycloak.keycloak.svc.cluster.local:8080/realms/Yas/protocol/openid-connect/certs
@@ -237,13 +238,14 @@ storefrontBffExtraConfig:
         client:
           provider:
             keycloak:
+              issuer-uri: ""
               authorization-uri: http://identity.yas.local.com/realms/Yas/protocol/openid-connect/auth
               token-uri: http://keycloak.keycloak.svc.cluster.local:8080/realms/Yas/protocol/openid-connect/token
               jwk-set-uri: http://keycloak.keycloak.svc.cluster.local:8080/realms/Yas/protocol/openid-connect/certs
               user-info-uri: http://keycloak.keycloak.svc.cluster.local:8080/realms/Yas/protocol/openid-connect/userinfo
               user-name-attribute: preferred_username
           registration:
-            api-client:
+            keycloak:
               provider: keycloak
               client-id: storefront-bff
               client-secret: ${KEYCLOAK_STOREFRONT_BFF_CLIENT_SECRET}
@@ -269,7 +271,7 @@ customerApplicationConfig:
 # Search application config custom
 searchApplicationConfig:
   elasticsearch:
-    url: elasticsearch-es-http.elasticsearch
+    url: elasticsearch.elasticsearch
     username: ${ELASTICSEARCH_USERNAME}
     password: ${ELASTICSEARCH_PASSWORD}
 
