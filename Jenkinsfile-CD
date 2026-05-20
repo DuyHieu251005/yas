@@ -97,8 +97,8 @@ pipeline {
                     sh "kubectl get svc -n ${env.K8S_NAMESPACE}"
                     
                     echo "============== HƯỚNG DẪN TRUY CẬP (YÊU CẦU MỤC 4) =============="
-                    def storefrontPort = sh(script: "kubectl get svc storefront-bff -n ${env.K8S_NAMESPACE} -o jsonpath='{.spec.ports[?(@.port==80)].nodePort}'", returnStdout: true).trim()
-                    def backofficePort = sh(script: "kubectl get svc backoffice-bff -n ${env.K8S_NAMESPACE} -o jsonpath='{.spec.ports[?(@.port==80)].nodePort}'", returnStdout: true).trim()
+                    def storefrontPort = sh(script: "kubectl get svc storefront-ui -n ${env.K8S_NAMESPACE} -o jsonpath='{.spec.ports[?(@.port==3000)].nodePort}'", returnStdout: true).trim()
+                    def backofficePort = sh(script: "kubectl get svc backoffice-ui -n ${env.K8S_NAMESPACE} -o jsonpath='{.spec.ports[?(@.port==3000)].nodePort}'", returnStdout: true).trim()
 
                     echo """
                     ĐỂ DEVELOPER TEST TRỰC TIẾP QUA DOMAIN NAME (MỤC 4 ĐỒ ÁN):
