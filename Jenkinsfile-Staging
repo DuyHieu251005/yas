@@ -24,7 +24,8 @@ pipeline {
         stage('Detect Changes & Build Images') {
             steps {
                 script {
-                    def changedFiles = sh(script: "git diff-tree --no-commit-id --name-only -r HEAD", returnStdout: true).trim().split('\n')
+                    def changedFilesRaw = sh(script: "git diff-tree --no-commit-id --name-only -r HEAD", returnStdout: true).trim()
+                    def changedFiles = changedFilesRaw ? changedFilesRaw.split('\n') as List : []
 
                     // Các service Java: Maven build từ root, Docker COPY jar từ target/
                     def javaServices = [
@@ -63,6 +64,7 @@ pipeline {
                         echo "=> Không phát hiện thay đổi ở các folder service, bỏ qua bước build."
                     } else {
                         echo "=> Cần build các service sau: ${servicesToBuild.join(', ')}"
+                        env.SERVICES_TO_BUILD = servicesToBuild.join(',')
 
                         echo "=> Đăng nhập DockerHub..."
                         sh "echo ${DOCKER_CREDS_PSW} | docker login -u ${DOCKER_CREDS_USR} --password-stdin"
@@ -99,9 +101,15 @@ pipeline {
         stage('Deploy to Staging') {
             steps {
                 script {
+                    def servicesToBuild = env.SERVICES_TO_BUILD ? env.SERVICES_TO_BUILD.split(',') as List : []
+
                     if (servicesToBuild.isEmpty()) {
                         echo "=> Không có thay đổi, bỏ qua deploy."
                     } else {
+                        sh "helm upgrade --install yas-configuration k8s/charts/yas-configuration --namespace staging --create-namespace"
+                        sh "helm dependency build k8s/charts/swagger-ui 2>/dev/null || true"
+                        sh "helm upgrade --install swagger-ui k8s/charts/swagger-ui --namespace staging --create-namespace --set service.type=NodePort"
+
                         def chartMapping = [
                             'backoffice': 'backoffice-ui',
                             'storefront': 'storefront-ui'

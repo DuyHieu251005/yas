@@ -17,6 +17,19 @@ pipeline {
                 script {
                     env.COMMIT_ID = sh(script: 'git rev-parse --short=7 HEAD', returnStdout: true).trim()
                     echo "Commit ID hiện tại: ${env.COMMIT_ID}"
+
+                    // Kiểm tra xem commit hiện tại có tag release không (dạng vX.Y.Z)
+                    // Dùng cho staging deployment
+                    def rawTag = sh(
+                        script: "git tag --points-at HEAD | grep -E '^v[0-9]+\\.[0-9]+\\.[0-9]+\$' | head -1 || true",
+                        returnStdout: true
+                    ).trim()
+                    env.RELEASE_TAG = rawTag ?: ''
+                    if (env.RELEASE_TAG) {
+                        echo "==> Phát hiện Release Tag: ${env.RELEASE_TAG} — Sẽ build image staging!"
+                    } else {
+                        echo "==> Không có release tag. Build image theo commit ID bình thường."
+                    }
                 }
             }
         }
@@ -24,9 +37,10 @@ pipeline {
         stage('Detect Changes & Build Images') {
             steps {
                 script {
-                    def changedFiles = sh(script: "git diff-tree --no-commit-id --name-only -r HEAD", returnStdout: true).trim().split('\n')
+                    def changedFilesRaw = sh(script: "git diff-tree --no-commit-id --name-only -r HEAD", returnStdout: true).trim()
+                    def changedFiles = changedFilesRaw ? changedFilesRaw.split('\n') as List : []
 
-                    // 🟢 Chỉ build 13 services cốt lõi (theo danh sách thầy)
+                    // 🟢 Chỉ build các services có Dockerfile (12 service image + build hỗ trợ)
                     // Các service Java: Maven build từ root, Docker COPY jar từ target/
                     def javaServices = [
                         'cart', 'customer', 'inventory',
@@ -38,18 +52,21 @@ pipeline {
                     // Các service Node.js: Docker multi-stage tự build (không cần Maven)
                     def nodeServices = ['storefront', 'backoffice']
 
-                    // Không còn service nào dùng multi-stage Maven trong Docker
-                    def multiStageServices = []
-
-                    def allServices = javaServices + nodeServices + multiStageServices
+                    def allServices = javaServices + nodeServices
 
                     def servicesToBuild = []
 
+                    // Nếu có Release Tag → build toàn bộ (cho staging)
                     // Nếu .build-trigger thay đổi → build toàn bộ services
-                    def triggerAll = changedFiles.any { it.contains('.build-trigger') }
+                    def triggerAll = env.RELEASE_TAG ||
+                                     changedFiles.any { it.contains('.build-trigger') }
                     if (triggerAll) {
                         servicesToBuild = allServices.collect { it }
-                        echo "=> .build-trigger detected, building ALL services..."
+                        if (env.RELEASE_TAG) {
+                            echo "=> Release Tag ${env.RELEASE_TAG} detected, building ALL services for staging..."
+                        } else {
+                            echo "=> .build-trigger detected, building ALL services..."
+                        }
                     } else {
                         for (file in changedFiles) {
                             def topDir = file.split('/')[0]
@@ -70,7 +87,7 @@ pipeline {
                         // === BƯỚC 1: Build Maven cho các service Java (nếu có) ===
                         def javaServicesToBuild = servicesToBuild.findAll { javaServices.contains(it) }
                         if (!javaServicesToBuild.isEmpty()) {
-                            echo "=> Đang compile các Java service bằng Maven (Java 25)..."
+                            echo "=> Đang compile các Java service bằng Maven..."
                             withEnv([
                                 'JAVA_HOME=/usr/lib/jvm/temurin-25-jdk-amd64',
                                 'PATH=/usr/lib/jvm/temurin-25-jdk-amd64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
@@ -85,13 +102,34 @@ pipeline {
                             echo "--- Build & Push cho service: ${service} ---"
                             def imageName = "${env.DOCKERHUB_USERNAME}/yas-${service}"
 
-                            // Tất cả service (Java + Node.js): context = thư mục service
+                            // Build với tag commit_id (cho dev)
                             sh "docker build -t ${imageName}:${env.COMMIT_ID} -t ${imageName}:latest -f ${service}/Dockerfile ${service}"
-
                             sh "docker push ${imageName}:${env.COMMIT_ID}"
                             sh "docker push ${imageName}:latest"
+
+                            // Nếu có Release Tag → push thêm tag vX.Y.Z (cho staging)
+                            if (env.RELEASE_TAG) {
+                                sh "docker tag ${imageName}:${env.COMMIT_ID} ${imageName}:${env.RELEASE_TAG}"
+                                sh "docker push ${imageName}:${env.RELEASE_TAG}"
+                                echo "=> Pushed staging image: ${imageName}:${env.RELEASE_TAG}"
+                            }
                         }
                     }
+                }
+            }
+        }
+
+        stage('Notify') {
+            steps {
+                script {
+                    echo "============== BUILD SUMMARY =============="
+                    echo "Commit ID : ${env.COMMIT_ID}"
+                    if (env.RELEASE_TAG) {
+                        echo "Release Tag: ${env.RELEASE_TAG} → Images pushed for STAGING"
+                        echo "ArgoCD staging sẽ tự detect và deploy vào namespace yas-staging"
+                    }
+                    echo "DockerHub  : https://hub.docker.com/u/${env.DOCKERHUB_USERNAME}"
+                    echo "=========================================="
                 }
             }
         }

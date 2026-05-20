@@ -1,83 +1,105 @@
-# Retry Policy cho product service (ví dụ minh hoạ retry khi gặp lỗi 5xx)
-apiVersion: networking.istio.io/v1beta1
+# ==============================================================
+# Retry Policies - VirtualService cho các backend services
+# Retry 3 lần khi gặp lỗi 5xx, timeout 10s
+# ==============================================================
+apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: product-retry-policy
+  name: product-vs
   namespace: yas-app
 spec:
   hosts:
     - product
   http:
-    - timeout: 10s
-      retries:
+    - retries:
         attempts: 3
-        perTryTimeout: 3s
-        retryOn: "5xx,reset,connect-failure,retriable-4xx"
+        perTryTimeout: 10s
+        retryOn: 5xx,gateway-error,connect-failure
       route:
         - destination:
             host: product
-            port:
-              number: 80
 ---
-# Retry Policy cho cart service
-apiVersion: networking.istio.io/v1beta1
+apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: cart-retry-policy
+  name: cart-vs
   namespace: yas-app
 spec:
   hosts:
     - cart
   http:
-    - timeout: 10s
-      retries:
+    - retries:
         attempts: 3
-        perTryTimeout: 3s
-        retryOn: "5xx,reset,connect-failure,retriable-4xx"
+        perTryTimeout: 10s
+        retryOn: 5xx,gateway-error,connect-failure
       route:
         - destination:
             host: cart
-            port:
-              number: 80
 ---
-# Retry Policy cho order service
-apiVersion: networking.istio.io/v1beta1
+apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: order-retry-policy
+  name: order-vs
   namespace: yas-app
 spec:
   hosts:
     - order
   http:
-    - timeout: 10s
-      retries:
+    - retries:
         attempts: 3
-        perTryTimeout: 3s
-        retryOn: "5xx,reset,connect-failure,retriable-4xx"
+        perTryTimeout: 10s
+        retryOn: 5xx,gateway-error,connect-failure
       route:
         - destination:
             host: order
-            port:
-              number: 80
 ---
-# Retry Policy cho storefront-bff
-apiVersion: networking.istio.io/v1beta1
+apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: storefront-bff-retry-policy
+  name: inventory-vs
   namespace: yas-app
 spec:
   hosts:
-    - storefront-bff
+    - inventory
   http:
-    - timeout: 15s
-      retries:
+    - retries:
         attempts: 3
-        perTryTimeout: 5s
-        retryOn: "5xx,reset,connect-failure,retriable-4xx"
+        perTryTimeout: 10s
+        retryOn: 5xx,gateway-error,connect-failure
       route:
         - destination:
-            host: storefront-bff
-            port:
-              number: 80
+            host: inventory
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: tax-vs
+  namespace: yas-app
+spec:
+  hosts:
+    - tax
+  http:
+    - retries:
+        attempts: 3
+        perTryTimeout: 10s
+        retryOn: 5xx,gateway-error,connect-failure
+      route:
+        - destination:
+            host: tax
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: search-vs
+  namespace: yas-app
+spec:
+  hosts:
+    - search
+  http:
+    - retries:
+        attempts: 3
+        perTryTimeout: 10s
+        retryOn: 5xx,gateway-error,connect-failure
+      route:
+        - destination:
+            host: search

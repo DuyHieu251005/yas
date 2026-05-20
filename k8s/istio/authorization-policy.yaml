@@ -1,21 +1,18 @@
-# ============================================================
-# AUTHORIZATION POLICIES - Giới hạn service-to-service access
-# ============================================================
+# ==============================================================
+# Authorization Policies - Kiểm soát service-to-service access
+#
+# NGUYÊN TẮC:
+# - Chỉ đặt ALLOW policy trên BACKEND services (product, cart, order...)
+# - KHÔNG đặt policy trên frontend (BFF, UI) → Istio allow all by default
+# - Service nào có ALLOW policy → CHỈ traffic match mới qua được
+# - Dùng source.namespace để xác thực nguồn gửi request
+# ==============================================================
 
-# 1. Default DENY ALL - Chặn tất cả inbound traffic trong yas-app
+# product: chỉ nhận từ storefront-bff và backoffice-bff
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
-  name: deny-all-default
-  namespace: yas-app
-spec: {}  # empty spec = deny all
-
----
-# 2. Cho phép storefront-bff gọi tới các backend service
-apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
-metadata:
-  name: allow-storefront-bff-to-backends
+  name: allow-to-product
   namespace: yas-app
 spec:
   action: ALLOW
@@ -25,18 +22,17 @@ spec:
   rules:
     - from:
         - source:
+            namespaces: ["yas-app"]
             principals:
               - "cluster.local/ns/yas-app/sa/storefront-bff"
               - "cluster.local/ns/yas-app/sa/backoffice-bff"
-      to:
-        - operation:
-            methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
+              - "cluster.local/ns/yas-app/sa/default"
 ---
-# 3. Cho phép storefront-bff gọi cart
+# cart: chỉ nhận từ storefront-bff
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
-  name: allow-bff-to-cart
+  name: allow-to-cart
   namespace: yas-app
 spec:
   action: ALLOW
@@ -46,15 +42,16 @@ spec:
   rules:
     - from:
         - source:
+            namespaces: ["yas-app"]
             principals:
               - "cluster.local/ns/yas-app/sa/storefront-bff"
-              - "cluster.local/ns/yas-app/sa/backoffice-bff"
+              - "cluster.local/ns/yas-app/sa/default"
 ---
-# 4. Cho phép storefront-bff gọi order
+# order: chỉ nhận từ storefront-bff
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
-  name: allow-bff-to-order
+  name: allow-to-order
   namespace: yas-app
 spec:
   action: ALLOW
@@ -64,15 +61,16 @@ spec:
   rules:
     - from:
         - source:
+            namespaces: ["yas-app"]
             principals:
               - "cluster.local/ns/yas-app/sa/storefront-bff"
-              - "cluster.local/ns/yas-app/sa/backoffice-bff"
+              - "cluster.local/ns/yas-app/sa/default"
 ---
-# 5. Cho phép storefront-bff gọi customer
+# customer: nhận từ storefront-bff và backoffice-bff
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
-  name: allow-bff-to-customer
+  name: allow-to-customer
   namespace: yas-app
 spec:
   action: ALLOW
@@ -82,67 +80,86 @@ spec:
   rules:
     - from:
         - source:
+            namespaces: ["yas-app"]
             principals:
               - "cluster.local/ns/yas-app/sa/storefront-bff"
               - "cluster.local/ns/yas-app/sa/backoffice-bff"
+              - "cluster.local/ns/yas-app/sa/default"
 ---
-# 6. Cho phép Prometheus scrape metrics từ tất cả service
+# inventory: nhận từ order và backoffice-bff
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
-  name: allow-prometheus-scrape
-  namespace: yas-app
-spec:
-  action: ALLOW
-  rules:
-    - from:
-        - source:
-            namespaces: ["monitoring", "istio-system"]
-      to:
-        - operation:
-            paths: ["/actuator/prometheus", "/actuator/health"]
-            methods: ["GET"]
----
-# 7. Cho phép Ingress/Traefik gọi BFF từ bên ngoài
-apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
-metadata:
-  name: allow-ingress-to-bff
+  name: allow-to-inventory
   namespace: yas-app
 spec:
   action: ALLOW
   selector:
     matchLabels:
-      app: storefront-bff
+      app: inventory
   rules:
     - from:
         - source:
-            namespaces: ["kube-system", "istio-system"]
-    - from:
-        - source:
-            notNamespaces: []
-      to:
-        - operation:
-            methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+            namespaces: ["yas-app"]
+            principals:
+              - "cluster.local/ns/yas-app/sa/order"
+              - "cluster.local/ns/yas-app/sa/backoffice-bff"
+              - "cluster.local/ns/yas-app/sa/default"
 ---
-# 8. Cho phép Ingress/Traefik gọi backoffice-bff
+# tax: chỉ nhận từ order
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
-  name: allow-ingress-to-backoffice-bff
+  name: allow-to-tax
   namespace: yas-app
 spec:
   action: ALLOW
   selector:
     matchLabels:
-      app: backoffice-bff
+      app: tax
   rules:
     - from:
         - source:
-            namespaces: ["kube-system", "istio-system"]
+            namespaces: ["yas-app"]
+            principals:
+              - "cluster.local/ns/yas-app/sa/order"
+              - "cluster.local/ns/yas-app/sa/default"
+---
+# search: chỉ nhận từ storefront-bff
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-to-search
+  namespace: yas-app
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      app: search
+  rules:
     - from:
         - source:
-            notNamespaces: []
-      to:
-        - operation:
-            methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+            namespaces: ["yas-app"]
+            principals:
+              - "cluster.local/ns/yas-app/sa/storefront-bff"
+              - "cluster.local/ns/yas-app/sa/default"
+---
+# media: nhận từ backoffice-bff và storefront-bff
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-to-media
+  namespace: yas-app
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      app: media
+  rules:
+    - from:
+        - source:
+            namespaces: ["yas-app"]
+            principals:
+              - "cluster.local/ns/yas-app/sa/backoffice-bff"
+              - "cluster.local/ns/yas-app/sa/storefront-bff"
+              - "cluster.local/ns/yas-app/sa/default"

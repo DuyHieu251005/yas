@@ -30,11 +30,16 @@ spec:
       project: default
       source:
         repoURL: https://github.com/DuyHieu251005/yas.git
-        # staging tracks git tags (releases)
-        targetRevision: HEAD
+        # Staging flow:
+        # 1. Developer tạo git tag vX.Y.Z trên main branch
+        # 2. Jenkins CI phát hiện tag → build image với tag vX.Y.Z → push DockerHub
+        # 3. Thay đổi image.tag ở đây thành vX.Y.Z và manual sync trên ArgoCD UI
+        # 4. ArgoCD deploy images vX.Y.Z vào namespace yas-staging
+        targetRevision: main
         path: "k8s/charts/{{service}}"
         helm:
           parameters:
+            # ⚠️ Cập nhật tag này thành vX.Y.Z khi có release, rồi manual sync
             - name: backend.image.tag
               value: latest
             - name: ui.image.tag
@@ -55,6 +60,7 @@ spec:
         server: https://kubernetes.default.svc
         namespace: yas-staging
       syncPolicy:
-        # staging: manual sync - do not auto-deploy
+        # Staging: MANUAL sync only — người quản lý mới được deploy lên staging
+        # Không auto-sync để tránh code chưa test lên staging
         syncOptions:
           - CreateNamespace=true

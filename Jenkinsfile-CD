@@ -1,7 +1,7 @@
 pipeline {
     agent any
 
-    // 🟢 13 services cốt lõi (theo yêu cầu thầy)
+    // 🟢 13 services demo (yas-configuration là infra riêng)
     parameters {
         string(name: 'cart_branch',          defaultValue: 'main', description: 'Branch cho cart')
         string(name: 'customer_branch',      defaultValue: 'main', description: 'Branch cho customer')
@@ -33,10 +33,8 @@ pipeline {
             steps {
                 script {
                     // Map: service_name -> [chart_name, branch_param]
-                    // 🟢 Chỉ deploy 13 services cốt lõi (theo yêu cầu thầy)
+                    // 🟢 Chỉ deploy 13 services demo (yas-configuration deploy riêng)
                     def services = [
-                        ['yas-configuration', 'yas-configuration', 'main'],
-                        ['swagger-ui',        'swagger-ui',        'main'],
                         ['cart',              'cart',              params.cart_branch],
                         ['customer',          'customer',          params.customer_branch],
                         ['inventory',         'inventory',         params.inventory_branch],
@@ -50,6 +48,10 @@ pipeline {
                         ['storefront-bff',    'storefront-bff',    params.storefront_bff_branch],
                         ['backoffice-bff',    'backoffice-bff',    params.backoffice_bff_branch]
                     ]
+
+                    sh "helm upgrade --install yas-configuration k8s/charts/yas-configuration --namespace ${env.K8S_NAMESPACE} --create-namespace"
+                    sh "helm dependency build k8s/charts/swagger-ui 2>/dev/null || true"
+                    sh "helm upgrade --install swagger-ui k8s/charts/swagger-ui --namespace ${env.K8S_NAMESPACE} --create-namespace --set service.type=NodePort"
 
                     for (svc in services) {
                         def serviceName = svc[0]
