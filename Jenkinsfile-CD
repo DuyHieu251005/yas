@@ -43,8 +43,8 @@ pipeline {
                         ['product',           'product',           params.product_branch],
                         ['search',            'search',            params.search_branch],
                         ['tax',               'tax',               params.tax_branch],
-                        ['backoffice',        'backoffice-ui',      params.backoffice_branch],
-                        ['storefront',        'storefront-ui',      params.storefront_branch],
+                        ['backoffice',        'backoffice-ui',     params.backoffice_branch],
+                        ['storefront',        'storefront-ui',     params.storefront_branch],
                         ['storefront-bff',    'storefront-bff',    params.storefront_bff_branch],
                         ['backoffice-bff',    'backoffice-bff',    params.backoffice_bff_branch]
                     ]

@@ -7,7 +7,6 @@ spec:
   generators:
     - list:
         elements:
-          # 🟢 13 services cốt lõi (theo yêu cầu thầy)
           - service: yas-configuration
           - service: swagger-ui
           - service: cart
