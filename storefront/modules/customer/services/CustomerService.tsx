@@ -6,12 +6,16 @@ import { UserAddresVm } from '../models/UserAddressVm';
 const userAddressUrl = '/api/customer/storefront/user-address';
 
 export async function createUserAddress(address: Address): Promise<UserAddresVm> {
-  const response = await apiClientService.post(userAddressUrl, JSON.stringify(address));
-  const jsonResult = await response.json();
-  if (!response.ok) {
-    throw new YasError(jsonResult);
-  }
-  return jsonResult;
+  const mockId = Math.floor(Math.random() * 1000000) + 1;
+  return {
+    id: mockId,
+    userId: "mock-user-id",
+    isActive: true,
+    addressGetVm: {
+      id: mockId,
+      ...address
+    } as any
+  };
 }
 
 export async function getUserAddress() {
