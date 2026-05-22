@@ -27,6 +27,9 @@ spec:
               - "cluster.local/ns/yas-app/sa/storefront-bff"
               - "cluster.local/ns/yas-app/sa/backoffice-bff"
               - "cluster.local/ns/yas-app/sa/order"
+              - "cluster.local/ns/yas-app/sa/cart"
+              - "cluster.local/ns/yas-app/sa/inventory"
+              - "cluster.local/ns/yas-app/sa/promotion"
 ---
 # cart: chỉ nhận từ storefront-bff
 apiVersion: security.istio.io/v1beta1
@@ -45,6 +48,7 @@ spec:
             namespaces: ["yas-app"]
             principals:
               - "cluster.local/ns/yas-app/sa/storefront-bff"
+              - "cluster.local/ns/yas-app/sa/order"
 ---
 # order: chỉ nhận từ storefront-bff
 apiVersion: security.istio.io/v1beta1
@@ -63,6 +67,8 @@ spec:
             namespaces: ["yas-app"]
             principals:
               - "cluster.local/ns/yas-app/sa/storefront-bff"
+              - "cluster.local/ns/yas-app/sa/payment"
+              - "cluster.local/ns/yas-app/sa/rating"
 ---
 # customer: nhận từ storefront-bff và backoffice-bff
 apiVersion: security.istio.io/v1beta1
@@ -82,6 +88,8 @@ spec:
             principals:
               - "cluster.local/ns/yas-app/sa/storefront-bff"
               - "cluster.local/ns/yas-app/sa/backoffice-bff"
+              - "cluster.local/ns/yas-app/sa/order"
+              - "cluster.local/ns/yas-app/sa/rating"
 ---
 # inventory: nhận từ order và backoffice-bff
 apiVersion: security.istio.io/v1beta1
@@ -157,3 +165,4 @@ spec:
               - "cluster.local/ns/yas-app/sa/backoffice-bff"
               - "cluster.local/ns/yas-app/sa/storefront-bff"
               - "cluster.local/ns/yas-app/sa/product"
+              - "cluster.local/ns/yas-app/sa/payment"
