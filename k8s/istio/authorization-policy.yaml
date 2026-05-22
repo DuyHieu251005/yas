@@ -8,7 +8,7 @@
 # - Dùng source.namespace để xác thực nguồn gửi request
 # ==============================================================
 
-# product: chỉ nhận từ storefront-bff và backoffice-bff
+# product: chỉ nhận từ storefront-bff, backoffice-bff và order
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
@@ -26,6 +26,7 @@ spec:
             principals:
               - "cluster.local/ns/yas-app/sa/storefront-bff"
               - "cluster.local/ns/yas-app/sa/backoffice-bff"
+              - "cluster.local/ns/yas-app/sa/order"
 ---
 # cart: chỉ nhận từ storefront-bff
 apiVersion: security.istio.io/v1beta1
@@ -137,7 +138,7 @@ spec:
             principals:
               - "cluster.local/ns/yas-app/sa/storefront-bff"
 ---
-# media: nhận từ backoffice-bff và storefront-bff
+# media: nhận từ backoffice-bff, storefront-bff và product
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
@@ -155,3 +156,4 @@ spec:
             principals:
               - "cluster.local/ns/yas-app/sa/backoffice-bff"
               - "cluster.local/ns/yas-app/sa/storefront-bff"
+              - "cluster.local/ns/yas-app/sa/product"

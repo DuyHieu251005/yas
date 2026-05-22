@@ -8,19 +8,33 @@ spec:
     - list:
         elements:
           - service: yas-configuration
+            image: yas-configuration
           - service: swagger-ui
+            image: swagger-ui
           - service: cart
+            image: yas-cart
           - service: customer
+            image: yas-customer
           - service: inventory
+            image: yas-inventory
           - service: media
+            image: yas-media
           - service: order
+            image: yas-order
           - service: product
+            image: yas-product
           - service: search
+            image: yas-search
           - service: tax
+            image: yas-tax
           - service: storefront-bff
+            image: yas-storefront-bff
           - service: backoffice-bff
+            image: yas-backoffice-bff
           - service: storefront-ui
+            image: yas-storefront
           - service: backoffice-ui
+            image: yas-backoffice
   template:
     metadata:
       name: "yas-dev-{{service}}"
@@ -46,9 +60,9 @@ spec:
             - name: ui.service.type
               value: NodePort
             - name: backend.image.repository
-              value: "duyhieu2005/yas-{{service}}"
+              value: "duyhieu2005/{{image}}"
             - name: ui.image.repository
-              value: "duyhieu2005/yas-{{service}}"
+              value: "duyhieu2005/{{image}}"
       destination:
         server: https://kubernetes.default.svc
         namespace: yas-dev
