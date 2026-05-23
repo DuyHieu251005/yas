@@ -14,6 +14,6 @@ spec:
     - port: {{ .Values.metricPort }}
       targetPort: metric
       protocol: TCP
-      name: http-metric
+      name: http-ops
   selector:
     {{- include "backend.selectorLabels" . | nindent 4 }}

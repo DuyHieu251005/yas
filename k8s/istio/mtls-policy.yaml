@@ -13,17 +13,6 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
-  name: yas-app-mtls-dr
-  namespace: yas-app
-spec:
-  host: "*.yas-app.svc.cluster.local"
-  trafficPolicy:
-    tls:
-      mode: ISTIO_MUTUAL
----
-apiVersion: networking.istio.io/v1alpha3
-kind: DestinationRule
-metadata:
   name: elasticsearch-disable-mtls
   namespace: yas-app
 spec:
