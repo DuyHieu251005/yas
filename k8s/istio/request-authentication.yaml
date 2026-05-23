@@ -64,12 +64,23 @@ spec:
       app.kubernetes.io/name: storefront-bff
   action: ALLOW
   rules:
-    # Cho phép request có JWT hợp lệ từ Keycloak realm Yas
-    - from:
+    # 1. Yêu cầu JWT hợp lệ từ Keycloak CHO CÁC ĐƯỜNG DẪN BẢO MẬT (/profile/*, /address/*)
+    - to:
+        - operation:
+            paths:
+              - "/profile/*"
+              - "/address/*"
+      from:
         - source:
             requestPrincipals:
               - "http://identity.yas-app:8080/realms/Yas/*"
-    # Cho phép request nội bộ từ các service trong namespace yas-app (mTLS)
+    # 2. Cho phép tất cả request truy cập vào các đường dẫn CÔNG KHAI (Homepage, products, health, prometheus...)
+    - to:
+        - operation:
+            notPaths:
+              - "/profile/*"
+              - "/address/*"
+    # 3. Cho phép tất cả request nội bộ từ các service qua mTLS (bao gồm cả Prometheus, Kiali, Ingress Traefik...)
     - from:
         - source:
-            namespaces: ["yas-app", "istio-system"]
+            namespaces: ["yas-app", "istio-system", "kube-system"]
