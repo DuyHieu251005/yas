@@ -83,4 +83,4 @@ spec:
     # 3. Cho phép tất cả request nội bộ từ các service qua mTLS (bao gồm cả Prometheus, Kiali, Ingress Traefik...)
     - from:
         - source:
-            namespaces: ["yas-app", "istio-system", "kube-system"]
+            namespaces: ["yas-app", "istio-system"]
