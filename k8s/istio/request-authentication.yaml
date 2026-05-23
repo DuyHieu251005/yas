@@ -73,7 +73,7 @@ spec:
       from:
         - source:
             requestPrincipals:
-              - "http://identity.yas-app:8080/realms/Yas/*"
+              - "*"
     # 2. Cho phép tất cả request truy cập vào các đường dẫn CÔNG KHAI (Homepage, products, health, prometheus...)
     - to:
         - operation:
