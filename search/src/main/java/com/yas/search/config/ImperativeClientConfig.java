@@ -13,18 +13,17 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
 @RequiredArgsConstructor
 public class ImperativeClientConfig extends ElasticsearchConfiguration {
 
+    static {
+        System.setProperty("elastic.clients.apiversioning.enabled", "false");
+    }
+
     private final ElasticsearchDataConfig elasticsearchConfig;
 
     @Override
     public ClientConfiguration clientConfiguration() {
-        org.springframework.data.elasticsearch.support.HttpHeaders headers = new org.springframework.data.elasticsearch.support.HttpHeaders();
-        headers.add("Accept", "application/vnd.elasticsearch+json;compatible-with=8");
-        headers.add("Content-Type", "application/vnd.elasticsearch+json;compatible-with=8");
-
         return ClientConfiguration.builder()
                 .connectedTo(elasticsearchConfig.getUrl())
                 .withBasicAuth(elasticsearchConfig.getUsername(), elasticsearchConfig.getPassword())
-                .withDefaultHeaders(headers)
                 .build();
     }
 }
