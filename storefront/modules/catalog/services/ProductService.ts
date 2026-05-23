@@ -6,7 +6,7 @@ import { ProductOptionValueDisplay, ProductOptionValueGet } from '../models/Prod
 import { ProductThumbnail } from '../models/ProductThumbnail';
 import { ProductVariation } from '../models/ProductVariation';
 import { ProductsGet } from '../models/ProductsGet';
-import { SimilarProduct } from '../models/SimilarProduct';
+
 import apiClientService from '@/common/services/ApiClientService';
 
 const baseUrl = '/api/product/storefront';
@@ -55,13 +55,7 @@ export async function getRelatedProductsByProductId(productId: number): Promise<
   throw new Error(await res.json());
 }
 
-export async function getSimilarProductsByProductId(productId: number): Promise<SimilarProduct[]> {
-  const res = await apiClientService.get(
-    `/api/recommendation/embedding/product/${productId}/similarity`
-  );
-  if (res.status >= 200 && res.status < 300) return res.json();
-  throw new Error(await res.json());
-}
+
 
 export async function getProductsByIds(ids: number[]): Promise<ProductThumbnail[]> {
   const response = await apiClientService.get(`${baseUrl}/products/list-featured?productId=${ids}`);

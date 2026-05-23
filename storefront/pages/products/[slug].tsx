@@ -8,7 +8,7 @@ import Tabs from 'react-bootstrap/Tabs';
 import BreadcrumbComponent from '../../common/components/BreadcrumbComponent';
 
 import { BreadcrumbModel } from '../../modules/breadcrumb/model/BreadcrumbModel';
-import { ProductDetails, RelatedProduct, SimilarProducts } from '../../modules/catalog/components';
+import { ProductDetails, RelatedProduct } from '../../modules/catalog/components';
 import { ProductDetail } from '../../modules/catalog/models/ProductDetail';
 import { ProductOptions } from '../../modules/catalog/models/ProductOptions';
 import { ProductVariation } from '../../modules/catalog/models/ProductVariation';
@@ -18,15 +18,8 @@ import {
   getProductOptionValues,
   getProductVariationsByParentId,
 } from '../../modules/catalog/services/ProductService';
-import { toastError, toastSuccess } from '../../modules/catalog/services/ToastService';
-import { PostRatingForm, RatingList } from '../../modules/rating/components';
-import { Rating } from '../../modules/rating/models/Rating';
-import { RatingPost } from '../../modules/rating/models/RatingPost';
-import {
-  createRating,
-  getAverageStarByProductId,
-  getRatingsByProductId,
-} from '../../modules/rating/services/RatingService';
+
+
 import { ProductOptionValueDisplay } from '@/modules/catalog/models/ProductOptionValueGet';
 
 type Props = {
@@ -104,76 +97,15 @@ export const getServerSideProps: GetServerSideProps = async (
 };
 
 const ProductDetailsPage = ({ product, productOptions, productVariations, pvid }: Props) => {
-  const [pageNo, setPageNo] = useState<number>(0);
-  const [ratingList, setRatingList] = useState<Rating[]>();
-  const [totalPages, setTotalPages] = useState<number>(0);
-  const [totalElements, setTotalElements] = useState<number>(0);
-  const pageSize = 5;
-
-  const [ratingStar, setRatingStar] = useState<number>(5);
-  const [contentRating, setContentRating] = useState<string>('');
-  const [isPost, setIsPost] = useState<boolean>(false);
-
-  const [averageStar, setAverageStar] = useState<number>(0);
   const [productOptionValueGet, setProductOptionValueGet] = useState<ProductOptionValueDisplay[]>(
     []
   );
 
   useEffect(() => {
-    getAverageStarByProductId(product.id)
-      .then((res) => {
-        setAverageStar(res);
-      })
-      .catch((error) => {
-        console.error('Error fetching average star:', error);
-      });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    getRatingsByProductId(product.id, pageNo, pageSize).then((res) => {
-      setRatingList(res.ratingList);
-      setTotalPages(res.totalPages);
-      setTotalElements(res.totalElements);
-    });
     getProductOptionValueByProductId(product.id).then((res) => {
       setProductOptionValueGet(res);
     });
-  }, [pageNo, pageSize, product.id, isPost]);
-
-  const handlePageChange = ({ selected }: any) => {
-    setPageNo(selected);
-  };
-
-  const handleChangeRating = (ratingStar: number) => {
-    setRatingStar(ratingStar);
-  };
-
-  const handleCreateRating = () => {
-    const ratingPost: RatingPost = {
-      content: contentRating,
-      star: ratingStar,
-      productId: product.id,
-      productName: product.name,
-    };
-    createRating(ratingPost)
-      .then(() => {
-        setContentRating('');
-        setIsPost(!isPost);
-        toastSuccess('Post a review succesfully');
-      })
-      .catch((err) => {
-        if (err == 403)
-          toastError(
-            'You are not authorized to rate this product since you are not logged in or have not purchased it'
-          );
-        else if (err == 409) {
-          toastError('You have rated this product before');
-        } else {
-          toastError('Some thing went wrong. Try again after a few seconds');
-        }
-      });
-  };
+  }, [product.id]);
 
   const category: BreadcrumbModel = {
     pageName: product.productCategories.toString(),
@@ -208,8 +140,8 @@ const ProductDetailsPage = ({ product, productOptions, productVariations, pvid }
         productVariations={productVariations}
         productOptionValueGet={productOptionValueGet}
         pvid={pvid}
-        averageStar={averageStar}
-        totalRating={totalElements}
+        averageStar={0}
+        totalRating={0}
       />
 
       {/* Product Attributes */}
@@ -237,43 +169,15 @@ const ProductDetailsPage = ({ product, productOptions, productVariations, pvid }
         </Table>
       </div>
 
-      {/* Specification and Rating */}
+      {/* Specification */}
       <Tabs defaultActiveKey="Specification" id="product-detail-tab" className="mb-3 " fill>
         <Tab eventKey="Specification" title="Specification" style={{ minHeight: '200px' }}>
           <div className="tabs" dangerouslySetInnerHTML={{ __html: product.specification }}></div>
-        </Tab>
-        <Tab eventKey="Reviews" title={`Reviews (${totalElements})`} style={{ minHeight: '200px' }}>
-          <div>
-            <div
-              style={{
-                borderBottom: '1px solid lightgray',
-                marginBottom: 30,
-              }}
-            >
-              <PostRatingForm
-                ratingStar={ratingStar}
-                handleChangeRating={handleChangeRating}
-                contentRating={contentRating}
-                setContentRating={setContentRating}
-                handleCreateRating={handleCreateRating}
-              />
-            </div>
-            <div>
-              <RatingList
-                ratingList={ratingList ? ratingList : null}
-                pageNo={pageNo}
-                totalElements={totalElements}
-                totalPages={totalPages}
-                handlePageChange={handlePageChange}
-              />
-            </div>
-          </div>
         </Tab>
       </Tabs>
 
       {/* Related products */}
       <RelatedProduct productId={product.id} />
-      <SimilarProducts productId={product.id} />
     </Container>
   );
 };
