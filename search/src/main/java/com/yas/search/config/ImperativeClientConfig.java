@@ -17,7 +17,7 @@ public class ImperativeClientConfig extends ElasticsearchConfiguration {
 
     @Override
     public ClientConfiguration clientConfiguration() {
-        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        org.springframework.data.elasticsearch.support.HttpHeaders headers = new org.springframework.data.elasticsearch.support.HttpHeaders();
         headers.add("Accept", "application/vnd.elasticsearch+json;compatible-with=8");
         headers.add("Content-Type", "application/vnd.elasticsearch+json;compatible-with=8");
 
