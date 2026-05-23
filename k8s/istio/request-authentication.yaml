@@ -1,0 +1,75 @@
+# ==============================================================
+# RequestAuthentication - Xác thực JWT Token qua Keycloak
+#
+# Mục đích: Kiểm tra và xác thực JWT token của Keycloak trên
+#           tầng Istio cho tất cả các BFF services
+#
+# Luồng xác thực:
+# 1. User đăng nhập → Keycloak cấp JWT token
+# 2. Trình duyệt gửi request kèm JWT trong header Authorization
+# 3. Istio interceptor kiểm tra JWT trước khi request tới BFF
+# 4. JWT không hợp lệ → Istio trả HTTP 401 ngay, không cho vào BFF
+# ==============================================================
+
+# --- Áp dụng cho storefront-bff: Xác thực JWT từ Keycloak ---
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: yas-jwt-storefront-bff
+  namespace: yas-app
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: storefront-bff
+  jwtRules:
+    - issuer: "http://identity.yas-app:8080/realms/Yas"
+      jwksUri: "http://identity.yas-app:8080/realms/Yas/protocol/openid-connect/certs"
+      audiences:
+        - "account"
+      # Forward JWT đến backend service để service có thể đọc thông tin user
+      forwardOriginalToken: true
+---
+# --- Áp dụng cho backoffice-bff: Xác thực JWT từ Keycloak ---
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: yas-jwt-backoffice-bff
+  namespace: yas-app
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: backoffice-bff
+  jwtRules:
+    - issuer: "http://identity.yas-app:8080/realms/Yas"
+      jwksUri: "http://identity.yas-app:8080/realms/Yas/protocol/openid-connect/certs"
+      audiences:
+        - "account"
+      forwardOriginalToken: true
+---
+# ==============================================================
+# AuthorizationPolicy bổ sung: Yêu cầu JWT hợp lệ cho BFF endpoints
+#
+# Kết hợp với RequestAuthentication ở trên:
+# - RequestAuthentication: Xác THỰC token (validate signature)
+# - AuthorizationPolicy này: Yêu cầu token phải TỒN TẠI (reject anonymous)
+# ==============================================================
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: require-jwt-storefront-bff
+  namespace: yas-app
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: storefront-bff
+  action: ALLOW
+  rules:
+    # Cho phép request có JWT hợp lệ từ Keycloak realm Yas
+    - from:
+        - source:
+            requestPrincipals:
+              - "http://identity.yas-app:8080/realms/Yas/*"
+    # Cho phép request nội bộ từ các service trong namespace yas-app (mTLS)
+    - from:
+        - source:
+            namespaces: ["yas-app", "istio-system"]

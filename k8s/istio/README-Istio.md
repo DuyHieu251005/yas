@@ -11,11 +11,12 @@ Thư mục này chứa toàn bộ cấu hình Istio Service Mesh để đạt **
 | File | Mô tả |
 |---|---|
 | `mtls.yaml` | PeerAuthentication STRICT cho toàn bộ namespace yas-app |
-| `mtls-policy.yaml` | Cấu hình bổ sung mTLS policy |
+| `mtls-policy.yaml` | DestinationRule bắt buộc ISTIO_MUTUAL cho tất cả services |
 | `ui-mtls-permissive.yaml` | Ghi đè PERMISSIVE cho UI services (storefront-ui, backoffice-ui, swagger-ui) |
 | `auth-policy.yaml` | AuthorizationPolicy mẫu cho product service |
-| `authorization-policy.yaml` | AuthorizationPolicy đầy đủ cho tất cả 8 services |
-| `retry-policy.yaml` | VirtualService retry policies cho 6 backend services |
+| `authorization-policy.yaml` | AuthorizationPolicy đầy đủ cho tất cả 8 backend services |
+| `request-authentication.yaml` | RequestAuthentication xác thực JWT Token từ Keycloak |
+| `retry-policy.yaml` | VirtualService retry + timeout policies cho 6 backend services |
 | `README-Istio.md` | File hướng dẫn này |
 
 ---
@@ -153,7 +154,28 @@ kubectl apply -f k8s/istio/authorization-policy.yaml
 | search | storefront-bff | cart, order, ... |
 | tax | order | cart, product, ... |
 
-### Bước 5: Cấu hình Retry Policy
+### Bước 5: Cấu hình RequestAuthentication (JWT qua Keycloak)
+
+`RequestAuthentication` là lớp bảo mật thứ 2 tại tầng Istio, xác thực tính hợp lệ của JWT token **trước khi** request đến được BFF service:
+
+```bash
+kubectl apply -f k8s/istio/request-authentication.yaml
+```
+
+**Kiểm tra:**
+```bash
+kubectl get requestauthentication -n yas-app
+# NAME                       AGE
+# yas-jwt-storefront-bff     1m
+# yas-jwt-backoffice-bff     1m
+```
+
+**Luồng xác thực 2 lớp:**
+- **Lớp 1 (Keycloak):** User đăng nhập → Keycloak cấp JWT Token
+- **Lớp 2 (Istio RequestAuthentication):** Istio xác thực chữ ký JWT bằng public key từ Keycloak JWKS endpoint
+- **Lớp 3 (Istio AuthorizationPolicy):** Kiểm tra service-to-service identity qua mTLS certificate
+
+### Bước 6: Cấu hình Retry Policy
 
 ```bash
 kubectl apply -f k8s/istio/retry-policy.yaml
@@ -241,13 +263,14 @@ kubectl exec -n yas-dev $CART_POD -c cart -- wget -qO- http://product:80/actuato
 
 Theo yêu cầu đồ án, thư mục này cung cấp:
 
-- ✅ **YAML manifest** cấu hình mTLS: `mtls.yaml`, `ui-mtls-permissive.yaml`
-- ✅ **YAML manifest** authorization policy: `authorization-policy.yaml`, `auth-policy.yaml`
-- ✅ **YAML manifest** retry policy: `retry-policy.yaml`
-- ✅ **Screenshot Kiali topology** (trong báo cáo 23127365.docx)
-- ✅ **Test plan + logs** (trong README này và báo cáo)
-- ✅ **README hướng dẫn triển khai** (file này)
+- ✅ **YAML manifest mTLS** (PeerAuthentication STRICT): `mtls.yaml`, `mtls-policy.yaml`, `ui-mtls-permissive.yaml`
+- ✅ **YAML manifest authorization policy** (service-to-service): `authorization-policy.yaml`, `auth-policy.yaml`
+- ✅ **YAML manifest RequestAuthentication** (JWT Keycloak): `request-authentication.yaml`
+- ✅ **YAML manifest retry + timeout policy**: `retry-policy.yaml` (timeout 30s, retry 3 lần với `retriable-4xx`)
+- ✅ **Screenshot Kiali topology** (trong báo cáo 23127365.docx và ảnh kiali_topology.png)
+- ✅ **Test plan + logs curl** (xem phần Test Plan phía trên với lệnh mẫu)
+- ✅ **README hướng dẫn triển khai từng bước** (file này, 6 bước đầy đủ)
 
 ---
 
-**© 2026 - Nguyễn Duy Hiệu (23127365) - Nhập môn DevOps 23MMT**
+**© 2026 - Kiều Duy Hiếu (23127365) - Nhập môn DevOps 23MMT**

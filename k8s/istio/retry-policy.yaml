@@ -1,6 +1,11 @@
 # ==============================================================
 # Retry Policies - VirtualService cho các backend services
-# Retry 3 lần khi gặp lỗi 5xx, timeout 10s
+#
+# Cấu hình:
+# - timeout: 30s   (timeout TỔNG THỂ cho cả request, kể cả retry)
+# - attempts: 3    (số lần retry tối đa)
+# - perTryTimeout: 10s (timeout mỗi lần thử: 3 x 10s = 30s)
+# - retryOn: 5xx,gateway-error,connect-failure
 # ==============================================================
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -11,10 +16,11 @@ spec:
   hosts:
     - product
   http:
-    - retries:
+    - timeout: 30s
+      retries:
         attempts: 3
         perTryTimeout: 10s
-        retryOn: 5xx,gateway-error,connect-failure
+        retryOn: 5xx,gateway-error,connect-failure,retriable-4xx
       route:
         - destination:
             host: product
@@ -30,10 +36,11 @@ spec:
   hosts:
     - cart
   http:
-    - retries:
+    - timeout: 30s
+      retries:
         attempts: 3
         perTryTimeout: 10s
-        retryOn: 5xx,gateway-error,connect-failure
+        retryOn: 5xx,gateway-error,connect-failure,retriable-4xx
       route:
         - destination:
             host: cart
@@ -49,10 +56,11 @@ spec:
   hosts:
     - order
   http:
-    - retries:
+    - timeout: 30s
+      retries:
         attempts: 3
         perTryTimeout: 10s
-        retryOn: 5xx,gateway-error,connect-failure
+        retryOn: 5xx,gateway-error,connect-failure,retriable-4xx
       route:
         - destination:
             host: order
@@ -68,10 +76,11 @@ spec:
   hosts:
     - inventory
   http:
-    - retries:
+    - timeout: 30s
+      retries:
         attempts: 3
         perTryTimeout: 10s
-        retryOn: 5xx,gateway-error,connect-failure
+        retryOn: 5xx,gateway-error,connect-failure,retriable-4xx
       route:
         - destination:
             host: inventory
@@ -87,10 +96,11 @@ spec:
   hosts:
     - tax
   http:
-    - retries:
+    - timeout: 30s
+      retries:
         attempts: 3
         perTryTimeout: 10s
-        retryOn: 5xx,gateway-error,connect-failure
+        retryOn: 5xx,gateway-error,connect-failure,retriable-4xx
       route:
         - destination:
             host: tax
@@ -106,10 +116,11 @@ spec:
   hosts:
     - search
   http:
-    - retries:
+    - timeout: 30s
+      retries:
         attempts: 3
         perTryTimeout: 10s
-        retryOn: 5xx,gateway-error,connect-failure
+        retryOn: 5xx,gateway-error,connect-failure,retriable-4xx
       route:
         - destination:
             host: search

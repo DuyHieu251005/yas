@@ -5,10 +5,15 @@
 # - Chỉ đặt ALLOW policy trên BACKEND services (product, cart, order...)
 # - KHÔNG đặt policy trên frontend (BFF, UI) → Istio allow all by default
 # - Service nào có ALLOW policy → CHỈ traffic match mới qua được
-# - Dùng source.namespace để xác thực nguồn gửi request
+# - Dùng principals để xác thực identity (mTLS ServiceAccount)
+#
+# CHÚ Ý: Chỉ tham chiếu các service ĐANG THỰC SỰ CHẠY trong cluster:
+# cart, customer, inventory, media, order, product, search, tax,
+# storefront-bff, backoffice-bff, storefront-ui, backoffice-ui, swagger
 # ==============================================================
 
-# product: chỉ nhận từ storefront-bff, backoffice-bff và order
+# product: chỉ nhận từ storefront-bff, backoffice-bff, order, cart, inventory
+# (Đã bỏ: promotion - không deploy trong cluster này)
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
@@ -29,9 +34,8 @@ spec:
               - "cluster.local/ns/yas-app/sa/order"
               - "cluster.local/ns/yas-app/sa/cart"
               - "cluster.local/ns/yas-app/sa/inventory"
-              - "cluster.local/ns/yas-app/sa/promotion"
 ---
-# cart: chỉ nhận từ storefront-bff
+# cart: chỉ nhận từ storefront-bff và order
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
@@ -51,6 +55,7 @@ spec:
               - "cluster.local/ns/yas-app/sa/order"
 ---
 # order: chỉ nhận từ storefront-bff
+# (Đã bỏ: payment, rating - không deploy trong cluster này)
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
@@ -67,10 +72,9 @@ spec:
             namespaces: ["yas-app"]
             principals:
               - "cluster.local/ns/yas-app/sa/storefront-bff"
-              - "cluster.local/ns/yas-app/sa/payment"
-              - "cluster.local/ns/yas-app/sa/rating"
 ---
-# customer: nhận từ storefront-bff và backoffice-bff
+# customer: nhận từ storefront-bff, backoffice-bff và order
+# (Đã bỏ: rating - không deploy trong cluster này)
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
@@ -89,7 +93,6 @@ spec:
               - "cluster.local/ns/yas-app/sa/storefront-bff"
               - "cluster.local/ns/yas-app/sa/backoffice-bff"
               - "cluster.local/ns/yas-app/sa/order"
-              - "cluster.local/ns/yas-app/sa/rating"
 ---
 # inventory: nhận từ order và backoffice-bff
 apiVersion: security.istio.io/v1beta1
@@ -147,6 +150,7 @@ spec:
               - "cluster.local/ns/yas-app/sa/storefront-bff"
 ---
 # media: nhận từ backoffice-bff, storefront-bff và product
+# (Đã bỏ: payment - không deploy trong cluster này)
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
@@ -165,4 +169,3 @@ spec:
               - "cluster.local/ns/yas-app/sa/backoffice-bff"
               - "cluster.local/ns/yas-app/sa/storefront-bff"
               - "cluster.local/ns/yas-app/sa/product"
-              - "cluster.local/ns/yas-app/sa/payment"
