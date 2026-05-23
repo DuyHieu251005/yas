@@ -137,7 +137,67 @@ tax-vs         tax         3          5xx,gateway-error,connect-failure,retriabl
 - retryOn: `5xx,gateway-error,connect-failure,retriable-4xx`
 - timeout: 30s tong thoi gian toan bo request
 
----
+### Xac nhan Retry Policy da duoc Envoy ap dung
+
+Cach manh nhat de kiem tra retry co hoat dong la xem truc tiep cau hinh trong Envoy proxy
+cua storefront-bff (service goi product):
+
+```bash
+sudo KUBECONFIG=/etc/rancher/k3s/k3s.yaml \
+  istioctl proxy-config route deployment/storefront-bff.yas-app \
+  --name 80 -o json \
+  | python3 -c '
+import sys, json
+data = json.load(sys.stdin)
+for vhost in data[0]["virtualHosts"]:
+    if "product.yas-app" in vhost["name"]:
+        print(json.dumps(vhost["routes"][0], indent=2))
+'
+```
+
+Ket qua thuc te (lay truc tiep tu Envoy proxy trong cluster):
+```json
+{
+  "match": { "prefix": "/" },
+  "route": {
+    "cluster": "outbound|80||product.yas-app.svc.cluster.local",
+    "timeout": "30s",
+    "retryPolicy": {
+      "retryOn": "5xx,gateway-error,connect-failure,retriable-4xx",
+      "numRetries": 3,
+      "perTryTimeout": "10s",
+      "retryHostPredicate": [
+        {
+          "name": "envoy.retry_host_predicates.previous_hosts"
+        }
+      ],
+      "hostSelectionRetryMaxAttempts": "5"
+    }
+  },
+  "metadata": {
+    "filterMetadata": {
+      "istio": {
+        "config": "/apis/networking.istio.io/v1alpha3/namespaces/yas-app/virtual-service/product-vs"
+      }
+    }
+  }
+}
+```
+
+Giai thich:
+- `numRetries: 3` - Envoy se thu lai toi da 3 lan khi gap loi
+- `retryOn: 5xx,...` - Dieu kien kich hoat retry: HTTP 500/502/503/504, mat ket noi, loi gateway
+- `perTryTimeout: 10s` - Moi lan thu toi da 10 giay
+- `timeout: 30s` - Tong thoi gian cho ca request (bao gom tat ca lan retry)
+- `retryHostPredicate: previous_hosts` - Khi retry, Envoy tranh goi vao cung mot pod da bi loi
+- `metadata.istio.config` - Xac nhan policy nay duoc sinh ra tu VirtualService `product-vs`
+
+Cac truong hop retry duoc kich hoat thuc te:
+- Product pod bi crash/OOMKilled -> Kubernetes restart pod -> cac request trong thoi gian do se duoc retry sang pod khac
+- Product tra HTTP 500 do loi database tam thoi -> Envoy retry 3 lan -> co the thanh cong o lan 2 hoac 3
+- Ket noi bi mat (connect-failure) -> Envoy retry ngay lap tuc
+
+
 
 ## Ket qua kiem tra mTLS (istioctl describe)
 
