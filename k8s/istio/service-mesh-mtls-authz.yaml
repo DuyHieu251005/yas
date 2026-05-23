@@ -1,0 +1,218 @@
+# ============================================================
+# YAS Service Mesh – mTLS & Authorization Policy Manifests
+# Namespace: yas-app
+# ============================================================
+
+---
+# 1. mTLS STRICT cho toàn namespace
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: yas-app
+spec:
+  mtls:
+    mode: STRICT
+
+---
+# 2. PERMISSIVE cho UI services (browser không có client cert)
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: storefront-ui-permissive
+  namespace: yas-app
+spec:
+  selector:
+    matchLabels:
+      app: storefront-ui
+  mtls:
+    mode: PERMISSIVE
+
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: backoffice-ui-permissive
+  namespace: yas-app
+spec:
+  selector:
+    matchLabels:
+      app: backoffice-ui
+  mtls:
+    mode: PERMISSIVE
+
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: swagger-ui-permissive
+  namespace: yas-app
+spec:
+  selector:
+    matchLabels:
+      app: swagger-ui
+  mtls:
+    mode: PERMISSIVE
+
+---
+# 3. Authorization Policies
+# Search: chỉ storefront-bff được gọi
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-to-search
+  namespace: yas-app
+spec:
+  selector:
+    matchLabels:
+      app: search
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        namespaces: [yas-app]
+        principals:
+        - cluster.local/ns/yas-app/sa/storefront-bff
+
+---
+# Product: storefront-bff, backoffice-bff, order, cart, inventory được gọi
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-to-product
+  namespace: yas-app
+spec:
+  selector:
+    matchLabels:
+      app: product
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        namespaces: [yas-app]
+        principals:
+        - cluster.local/ns/yas-app/sa/storefront-bff
+        - cluster.local/ns/yas-app/sa/backoffice-bff
+        - cluster.local/ns/yas-app/sa/order
+        - cluster.local/ns/yas-app/sa/cart
+        - cluster.local/ns/yas-app/sa/inventory
+
+---
+# Order: chỉ storefront-bff được đặt hàng
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-to-order
+  namespace: yas-app
+spec:
+  selector:
+    matchLabels:
+      app: order
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        namespaces: [yas-app]
+        principals:
+        - cluster.local/ns/yas-app/sa/storefront-bff
+
+---
+# Cart: storefront-bff và order được gọi
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-to-cart
+  namespace: yas-app
+spec:
+  selector:
+    matchLabels:
+      app: cart
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        namespaces: [yas-app]
+        principals:
+        - cluster.local/ns/yas-app/sa/storefront-bff
+        - cluster.local/ns/yas-app/sa/order
+
+---
+# Tax: chỉ order service được tính thuế
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-to-tax
+  namespace: yas-app
+spec:
+  selector:
+    matchLabels:
+      app: tax
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        namespaces: [yas-app]
+        principals:
+        - cluster.local/ns/yas-app/sa/order
+
+---
+# Inventory: order và backoffice-bff được gọi
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-to-inventory
+  namespace: yas-app
+spec:
+  selector:
+    matchLabels:
+      app: inventory
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        namespaces: [yas-app]
+        principals:
+        - cluster.local/ns/yas-app/sa/order
+        - cluster.local/ns/yas-app/sa/backoffice-bff
+
+---
+# Customer: storefront-bff, backoffice-bff, order được gọi
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-to-customer
+  namespace: yas-app
+spec:
+  selector:
+    matchLabels:
+      app: customer
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        namespaces: [yas-app]
+        principals:
+        - cluster.local/ns/yas-app/sa/storefront-bff
+        - cluster.local/ns/yas-app/sa/backoffice-bff
+        - cluster.local/ns/yas-app/sa/order
+
+---
+# Media: storefront-bff, backoffice-bff, product được gọi
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-to-media
+  namespace: yas-app
+spec:
+  selector:
+    matchLabels:
+      app: media
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        namespaces: [yas-app]
+        principals:
+        - cluster.local/ns/yas-app/sa/storefront-bff
+        - cluster.local/ns/yas-app/sa/backoffice-bff
+        - cluster.local/ns/yas-app/sa/product

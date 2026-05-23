@@ -1,0 +1,40 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: rewrite-elasticsearch-headers
+  namespace: yas-app
+spec:
+  priority: 10
+  configPatches:
+  - applyTo: HTTP_FILTER
+    match:
+      context: SIDECAR_OUTBOUND
+      listener:
+        filterChain:
+          filter:
+            name: "envoy.filters.network.http_connection_manager"
+            subFilter:
+              name: "envoy.filters.http.router"
+    patch:
+      operation: INSERT_BEFORE
+      value:
+        name: envoy.filters.http.lua
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+          inlineCode: |
+            function envoy_on_request(request_handle)
+              local accept = request_handle:headers():get("Accept")
+              if accept then
+                local new_accept = string.gsub(accept, ";%s*compatible%-with=%d+", "")
+                if new_accept ~= accept then
+                  request_handle:headers():replace("Accept", new_accept)
+                end
+              end
+              local content_type = request_handle:headers():get("Content-Type")
+              if content_type then
+                local new_content_type = string.gsub(content_type, ";%s*compatible%-with=%d+", "")
+                if new_content_type ~= content_type then
+                  request_handle:headers():replace("Content-Type", new_content_type)
+                end
+              end
+            end

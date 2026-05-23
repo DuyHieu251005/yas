@@ -1,0 +1,131 @@
+# ============================================================
+# YAS Service Mesh – Retry Policy (VirtualService)
+# Namespace: yas-app
+# Retry: 3 attempts, 10s per try, on 5xx/gateway-error
+# ============================================================
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: search-vs
+  namespace: yas-app
+spec:
+  hosts:
+  - search
+  http:
+  - retries:
+      attempts: 3
+      perTryTimeout: 10s
+      retryOn: 5xx,gateway-error,connect-failure,retriable-4xx
+    timeout: 30s
+    route:
+    - destination:
+        host: search
+        port:
+          number: 80
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: product-vs
+  namespace: yas-app
+spec:
+  hosts:
+  - product
+  http:
+  - retries:
+      attempts: 3
+      perTryTimeout: 10s
+      retryOn: 5xx,gateway-error,connect-failure,retriable-4xx
+    timeout: 30s
+    route:
+    - destination:
+        host: product
+        port:
+          number: 80
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: order-vs
+  namespace: yas-app
+spec:
+  hosts:
+  - order
+  http:
+  - retries:
+      attempts: 3
+      perTryTimeout: 10s
+      retryOn: 5xx,gateway-error,connect-failure,retriable-4xx
+    timeout: 30s
+    route:
+    - destination:
+        host: order
+        port:
+          number: 80
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: cart-vs
+  namespace: yas-app
+spec:
+  hosts:
+  - cart
+  http:
+  - retries:
+      attempts: 3
+      perTryTimeout: 10s
+      retryOn: 5xx,gateway-error,connect-failure,retriable-4xx
+    timeout: 30s
+    route:
+    - destination:
+        host: cart
+        port:
+          number: 80
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: inventory-vs
+  namespace: yas-app
+spec:
+  hosts:
+  - inventory
+  http:
+  - retries:
+      attempts: 3
+      perTryTimeout: 10s
+      retryOn: 5xx,gateway-error,connect-failure,retriable-4xx
+    timeout: 30s
+    route:
+    - destination:
+        host: inventory
+        port:
+          number: 80
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: tax-vs
+  namespace: yas-app
+spec:
+  hosts:
+  - tax
+  http:
+  - retries:
+      attempts: 3
+      perTryTimeout: 10s
+      retryOn: 5xx,gateway-error,connect-failure,retriable-4xx
+    timeout: 30s
+    route:
+    - destination:
+        host: tax
+        port:
+          number: 80
