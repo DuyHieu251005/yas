@@ -20,7 +20,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: storefront-bff
+      app: storefront-bff
   jwtRules:
     - issuer: "http://identity.yas-app:8080/realms/Yas"
       jwksUri: "http://identity.yas-app:8080/realms/Yas/protocol/openid-connect/certs"
@@ -38,7 +38,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: backoffice-bff
+      app: backoffice-bff
   jwtRules:
     - issuer: "http://identity.yas-app:8080/realms/Yas"
       jwksUri: "http://identity.yas-app:8080/realms/Yas/protocol/openid-connect/certs"
@@ -61,7 +61,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: storefront-bff
+      app: storefront-bff
   action: ALLOW
   rules:
     # 1. Yêu cầu JWT hợp lệ từ Keycloak CHO CÁC ĐƯỜNG DẪN BẢO MẬT (/profile/*, /address/*)
