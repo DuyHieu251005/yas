@@ -13,7 +13,6 @@
 # ==============================================================
 
 # product: chỉ nhận từ storefront-bff, backoffice-bff, order, cart, inventory
-# (Đã bỏ: promotion - không deploy trong cluster này)
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
