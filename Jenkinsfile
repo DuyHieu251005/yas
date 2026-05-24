@@ -119,6 +119,27 @@ pipeline {
             }
         }
 
+        stage('Update GitOps Configuration') {
+            steps {
+                script {
+                    if (env.RELEASE_TAG) {
+                        echo "=> Cập nhật tag ${env.RELEASE_TAG} vào file cấu hình ArgoCD Staging..."
+                        sh """
+                        git config user.email "jenkins@yas.local"
+                        git config user.name "Jenkins CI"
+                        
+                        sed -i '/name: backend.image.tag/{n;s/value: .*/value: ${env.RELEASE_TAG}/}' k8s/argocd/yas-staging-appset.yaml
+                        sed -i '/name: ui.image.tag/{n;s/value: .*/value: ${env.RELEASE_TAG}/}' k8s/argocd/yas-staging-appset.yaml
+                        
+                        git add k8s/argocd/yas-staging-appset.yaml
+                        git commit -m "chore(gitops): release ${env.RELEASE_TAG} [skip ci]" || echo "No changes to commit"
+                        git push origin HEAD:main
+                        """
+                    }
+                }
+            }
+        }
+
         stage('Notify') {
             steps {
                 script {

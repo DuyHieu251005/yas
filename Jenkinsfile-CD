@@ -19,7 +19,7 @@ pipeline {
 
     environment {
         DOCKERHUB_USERNAME = 'duyhieu2005'
-        K8S_NAMESPACE = 'yas-app'
+        K8S_NAMESPACE = 'yas-test'
     }
 
     stages {
