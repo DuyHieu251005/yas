@@ -98,42 +98,38 @@ pipeline {
             }
         }
 
-        stage('Update Kubernetes Manifests (GitOps)') {
+        stage('Deploy to Staging') {
             steps {
                 script {
                     def servicesToBuild = env.SERVICES_TO_BUILD ? env.SERVICES_TO_BUILD.split(',') as List : []
 
                     if (servicesToBuild.isEmpty()) {
-                        echo "=> Không có thay đổi, bỏ qua cập nhật manifest."
+                        echo "=> Không có thay đổi, bỏ qua deploy."
                     } else {
+                        sh "helm upgrade --install yas-configuration k8s/charts/yas-configuration --namespace staging --create-namespace"
+                        sh "helm dependency build k8s/charts/swagger-ui 2>/dev/null || true"
+                        sh "helm upgrade --install swagger-ui k8s/charts/swagger-ui --namespace staging --create-namespace --set service.type=NodePort"
+
                         def chartMapping = [
                             'backoffice': 'backoffice-ui',
                             'storefront': 'storefront-ui'
                         ]
-                        
-                        sh '''
-                        git config user.email "jenkins@yas.local"
-                        git config user.name "Jenkins CI"
-                        '''
-
                         for (service in servicesToBuild) {
                             def chartName = chartMapping.get(service, service)
-                            echo "=> Cập nhật tag ${env.COMMIT_ID} cho chart ${chartName}..."
-                            
-                            // Dùng sed để đổi tag trong file values.yaml của chart tương ứng
+                            echo "=> Deploying ${service} to namespace staging..."
                             sh """
-                            sed -i 's/tag: .*/tag: ${env.COMMIT_ID}/g' k8s/charts/${chartName}/values.yaml
-                            git add k8s/charts/${chartName}/values.yaml
+                            helm dependency build k8s/charts/${chartName} 2>/dev/null || true
+                            helm upgrade --install ${service} k8s/charts/${chartName} \
+                                --namespace staging --create-namespace \
+                                --set backend.image.repository=${env.DOCKERHUB_USERNAME}/yas-${service} \
+                                --set ui.image.repository=${env.DOCKERHUB_USERNAME}/yas-${service} \
+                                --set backend.image.tag=${env.COMMIT_ID} \
+                                --set ui.image.tag=${env.COMMIT_ID} \
+                                --set backend.serviceMonitor.enabled=false \
+                                --set backend.service.type=NodePort \
+                                --set ui.service.type=NodePort
                             """
                         }
-                        
-                        // Push thay đổi lên repository
-                        sh """
-                        git commit -m "chore(gitops): update staging image tags to ${env.COMMIT_ID} [skip ci]" || echo "No changes to commit"
-                        
-                        # Fix detached HEAD issue from checkout scm
-                        git push origin HEAD:main
-                        """
                     }
                 }
             }
