@@ -48,9 +48,9 @@ spec:
         helm:
           parameters:
             - name: backend.image.tag
-              value: cfc0004
+              value: 111c831
             - name: ui.image.tag
-              value: cfc0004
+              value: 111c831
             - name: backend.image.pullPolicy
               value: Always
             - name: ui.image.pullPolicy
