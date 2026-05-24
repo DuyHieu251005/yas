@@ -39,11 +39,6 @@ spec:
         path: "k8s/charts/{{service}}"
         helm:
           parameters:
-            # ⚠️ Cập nhật tag này thành vX.Y.Z khi có release, rồi manual sync
-            - name: backend.image.tag
-              value: latest
-            - name: ui.image.tag
-              value: latest
             - name: backend.image.pullPolicy
               value: Always
             - name: ui.image.pullPolicy
